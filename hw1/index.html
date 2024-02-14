@@ -1,7 +1,345 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 1 index.html here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <style>
+
+
+  </style>
+  <title>CS 184/284A Rasterizer</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+</head>
+
+
+<body>
+
+<div class="main-description mt-3">
+
+  <h1 class="display-3 text-center fw-medium"> Homework 1: Rasterizer </h1>
+  <p class="lead text-center fs-3"> CS 184/284A: Computer Graphics and Imaging, Spring 2024 </p>
+  <p class="text-center fs-2"> Siddharth Nath & Ansh Verma </p>
+  <div style="width: 80%;" class="mx-auto">
+  <!--<div class="d-grid gap-2 d-md-flex justify-content-md-center">-->
+  <!--<button class="btn btn-outline-primary me-md-2" type="button" onClick="document.getElementById('image-quilting').scrollIntoView();""> Image Quilting </button>-->
+  <!--<button class="btn btn-outline-primary" type="button" onClick="document.getElementById('neural-style-transfer').scrollIntoView();"> Neural Algorithm of Artistic Style </button>-->
+  <!--</div>-->
+  <hr />
+  </div>
+
+  </div>
+
+<br><br>
+
+<div class="project-body mx-auto" style="width: 80%;">
+  <div class="project-overview">
+  <h1 class="display-5"> Project Overview </h1>
+  <p class="fs-6">
+    In this project we learned how to implement a simple rasterizer with features for drawing basic shapes like triangles, antialiasing techniques such as supersampling, how to compute hierarchical transforms with homogeneous coordinates, and how to perform texture mapping with antialiasing.
+    The final output of this project is a functional vector graphics/rasterization pipeline that takes in simplified versions of SVG (Scalable Vector Graphics) files!
+    <br> <br>
+    This project was valuable to us because it gave us a greater understanding of the computation needed for computer graphics.
+    From this project, we gained insights into the processes and algorithms that drive rendering in everyday applications.
+    Additionally, we enjoyed learning about anti-aliasing techniques through supersampling as we were both familiar with the issues of aliasing.
+    Another interesting part of the project was implementing Barycentric coordinates and seeing how this coordinate space is able to interpolate different attributes such as colors and textures!
+  </p>
+
+  </div>
+
+  <div class="section_I py-4">
+
+  <h1 class="display-5"> Section I: Rasterization </h1>
+  <hr>
+
+  <h1 class="display-6"> Part 1: Rasterizing single-color triangles </h1>
+
+  <p class = "fs-6">
+    The process of rasterizing triangles involves converting a triangle into a set of pixels of the same structure as the triangle in a plane of pixels known as the frame buffer.
+    <br> <br>
+    The first step was calculating the bounding box of the rasterizing triangle in the frame buffer.
+    Since we want to avoid inefficiently and redundant computation from traversing through the entire frame buffer, we instead calculated the bounding box surrounding the triangle by taking the minimum and maximum of each vertex's (x, y) coordinates.
+    Given the \( [x, y] \) coordinates for each triangle vertex \( (x_0, y_0), (x_1, y_1), (x_2, y_2) \), we defined the bounding box encompassing the triangle with the points \( (x_{min}, y_{min}) \text{ and } (x_{max}, y_{max}) \).
+    <br> <br>
+    After defining this bounding box, we looped through each sample point and performed the point-in-triangle test with the sample point in the center of each pixel. Therefore, for each \( (x, y) \) coordinate, we checked to see if \( (x + 0.5, y + 0.5) \) exists within the triangle.
+    If so, we called the <kbd>fill_pixel()</kbd> method to fill in the appropriate location within the frame buffer with the passed in Color.
+    <br> <br>
+    One issue that we ran into was figuring out how to rasterize triangles regardless of the winding order of the verticies (i.e clockwise or counter-clockwise). The line tests that we used to check if a given point is inside the triangle only works if all edges are oriented in a clockwise direction.
+    Therefore, to account for the fact that triangles can also be oriented in the counterclockwise direction, we had to flip the order of computing the triangle difference vectors \( (dX_0, dX_1, dX_2, dY_0, dY_1, dY_2) \) by calculating the cross product to check if the orientation was counterclockwise.
+    <br> <br>
+    Another problem we had to consider was how to deal with edge cases (when a sample point is lying exactly on an edge). A quick fix to this issue was changing the \( >0 \)  inequality to be \( >= 0\).
+    After resolving this issue, all the <code>/basic</code> tests were rendered correctly!
+  </p>
+
+  <p class = "fs-6"> Here is a screenshot of <code>basic/test4.svg</code> with the default viewing parameters and with the pixel inspector centered on a sharp edge of the scene. As you can see, this image has "jaggies" because of aliasing! </p>
+
+  <div class="container grid-container">
+    <div class="row align-items-center justify-content-center">
+      <div class="col-lg-8 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_1_output.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+          <p class="card-text"> basic/test4.svg </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  </div>
+
+
+  <h1 class="display-6"> Part 2: Antialiasing triangles </h1>
+
+    <p class="fs-6">
+      In Task 2, we used supersampling to antialias the triangles and overcome the “jaggies” that are visible in the images above. Supersampling is a useful technique for anti-aliasing since it approximates the 1-pixel box filter by sampling multiple locations within each pixel according to the <code>sample_rate</code> parameter to create an average color value. Using supersampling, we are able to attenuate the high frequency edges and corners of the rasterized svg images such as the thin red edge of the triangle in the output above.
+      <br> <br>
+      The first modification we made to the rasterization pipeline was modifying the implementation of the <kbd>rasterize_triangle</kbd> function from Task 1 to iterate over <code>sample_rate</code> grid location for each pixel. By adding two inner for-loops, we were able to generate a <code>sqrt(sample_rate) x sqrt(sample_rate)</code> grid of sub-pixel locations and sample the color values at each location to populate the <code>sample_buffer</code> 1D vector of length <code>width * height * sample_rate</code>. Using this modified code, we ended up storing the sampled Color objects in the sample buffer to rasterize the image at a higher-resolution framebuffer.
+      <br> <br>
+      After making these changes to the rasterize_triangle function, we had to update the <kbd>RasterizerImp::resolve_to_framebuffer</kbd> function to resolve the supersampled pixel Color values into the framebuffer. To do this, we once again iterated over the <code>sqrt(sample_rate) x sqrt(sample_rate)</code> grid of sub-pixel locations for each pixel and compute the average color to be stored in the framebuffer and drawn to the display.
+      <br> <br>
+      Another change we made to the rasterization pipeline was in the <kbd>set_framebuffer_target</kbd> and <kbd>set_sample_rate</kbd> functions. Here, we had to modify the existing code to correctly manage the supersampled buffer memory. Specifically, we updated the code responsible for resizing the <code>sample_buffer</code> to account for supersampling.
+      <br> <br>
+      The final change we made to the rasterization pipeline was modifying the <kbd>fill_pixel</kbd> function since lines and points still need to be drawn into the supersample buffer despite not being supersampled. Therefore, we adjusted <kdb>fill_pixel</kdb> to fill all the supersamples corresponding to the point/line with the same color to ensure that points and lines are rendered correctly.
+      <br> <br>
+      By default, the standard sample rate of 1 naively takes the color at the center of each pixel which leads to aliasing from the high frequency edges and corners. As the <code>sample_rate</code> increases, we notice that the rasterized triangles have smoother edges and no longer contain “jaggies”.
+    </p>
+
+    <p> Here are the screenshots of <code>basic/test4.svg</code> with the default viewing parameters and sample rates 1, 4, and 16. As the sample rate increases, the effect of the jaggies is less noticeable. </p>
+
+    <div class="row align-items-center justify-content-center">
+      <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_2_rate_1.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> test4.svg - Sample Rate 1 </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_2_rate_4.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> test4.svg - Sample Rate 4 </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="row align-items-center justify-content-center">
+      <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_2_rate_16.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> test4.svg - Sample Rate 16 </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <h1 class="display-6"> Part 3: Transforms </h1>
+
+    <p class="fs-6">
+      In task 3, we first implemented translation, scaling, and rotation by filling out the appropriate 3 by 3 geometric transform matrices in <code>transforms.cpp</code>. Using homogeneous coordinates, we implemented the following three matricies:
+    </p>
+
+    <div class="w-50 text-center mx-auto">
+      <img src="./images/task_3_transforms.png" class="img-fluid" alt="Responsive image">
+    </div>
+
+    <p class="fs-6">
+      With these matricies defined, we took advantage of hierarchical transfroms to create an updated version of cubeman. By adding translations, rotations, and scaling to certain parts of cubeman's arms and legs, we made cubeman dance to perform the Salsa!
+    </p>
+
+    <div class="row align-items-center justify-content-center">
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_3_default_cubeman.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Default Cubeman </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_4_dancing_cubeman.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Dancing Cubeman </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section_2 py-4">
+
+    <h1 class="display-5"> Section II: Sampling </h1>
+    <hr>
+
+    <h1 class="display-6"> Part 4: Barycentric coordinates </h1>
+
+    <p class="fs-6">
+      Barycentric coordinates are part of a useful coordinate system that allows us to perform interpolation across triangles. Using this coordinate system, we are able to interpolate colors, texture values, and other values defined by the vertices of a triangle across the triangle. In this task, we used barycentric interpolation to draw a triangle with colors defined at the vertices and interpolated across the triangle area. For example, if we have a triangle with verticies \( V_A, V_B, V_C \) defined with the colors \( V_A = \text{Red}, V_B = \text{Green}, V_C = \text{Blue} \), we can use barycentric coordinates to map the color of any \( V = (x, y) \) coordinate inside the triangle to a color defined by \( \alpha * V_A + \beta * V_B + \gamma * V_C \)
+      <br> <br>
+      <div class="w-50 text-center mx-auto">
+        <img src="./images/task_4_triangle.jpg" class="img-fluid" alt="Responsive image">
+      </div>
+      As a result of using barycentric coordinates, the traingle above has smooth color transitions!
+      <br> <br>
+      Inside the function <kbd>rasterize_interpolated_color_triangle</kbd>, we modified the code from task 2 to first calculate the \( \alpha, \beta, \gamma \) parameters for each sample point inside the triangle. Using the Barycentric Coordinate Formulas and the fact that \( \alpha + \beta + \gamma = 1\), we were able to calculate the appropriate linearly interpolated color for each sample point and fill the sample buffer with this color.
+    </p>
+
+    <p class = "fs-6"> This screenshot of <code>basic/test7.svg</code> shows the power of using barycentric coordinates for linear interpolation of color values. As seen below, we can achieve a smooth and blended transition of colors with this coordinate system: </p>
+
+
+    <div class="row align-items-center justify-content-center">
+      <div class="col-lg-8 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_4_test7.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> basic/test7.svg </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h1 class="display-6"> Part 5: "Pixel sampling" for texture mapping </h1>
+
+    <p class="fs-6">
+      In order to map 2D textures onto a geometry, we need to perform texture mapping. The pixels in the texture map are referred to as texels which are (u, v) coordinates in the range [0, 1]. In task 5, we use pixel sampling to draw triangles with colors defined by a texture mapping with the given 2D texture (u,v) coordinates at each vertex and the given Texture image.
+      <br> <br>
+      Since each triangle vertex is defined by its (u, v) coordinates, we rely on Barycentric Coordinates to interpolate any texture coordinate within the triangle.
+      However, since the interpolated (u, v) coordinates are not necessarily integers, we use pixel-sampling to determine which texel(s) to use for a given interpolated (u, v) coordinate
+      <br> <br>
+      To implement nearest neighbor pixel sampling in the <kbd>sample_nearest</kbd> method of <code>texture.cpp</code>, we first scaled the (u, v) coordinates by the width and height of the provided mipmap level before rounding the results to the nearest integers. Finally, we pass in the resulting (tx, ty) coordinates to <kbd>get_texel</kbd> to retrieve the corresponding texel.
+      <br> <br>
+      For bilinear pixel sampling, we implemented the following steps in the <kbd>sample_bilinear</kbd> function. First, we scale the (u, v) coordinates just like how we did for nearest neighbor pixel sampling. However, instead of rounding the results, we start by calculating the 4 nearest sample locations: \( u_{00}, u_{01}, u_{10}, u_{11} \). With the four nearest texture pixels, we follow the steps below to get a "weighted" texel.
+      <div class="w-50 text-center mx-auto">
+        <img src="./images/task_5_bilinear_calculation.jpeg" class="img-fluid" alt="Responsive image">
+      </div>
+      <br>
+      The images below show the differences between nearest sampling and bilinear sampling:
+    </p>
+
+    <div class="row align-items-center justify-content-center">
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_5_nearest_1.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Nearest Sampling - 1 sample/pixel </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_5_nearest_16.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Nearest Sampling - 16 samples/pixel </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row align-items-center justify-content-center">
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_5_bilinear_1.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Bilinear Sampling - 1 sample/pixel </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_5_bilinear_16.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Bilinear Sampling - 16 samples/pixel </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      Here, we can see that the bilinear sampling method produces better looking results compared to the nearest sampling method. Comparing the 1 sample/pixel images, the nearest sampling image is more noisy and isn't as smooth as the bilinear sampling results. In the 16 samples/pixel image, the advantages of bilinear pixel sampling over nearest neighbor pixel sampling are harder to notice because both methods effectively use supersampling at a high rate which makes both images anti-aliased.
+      <br> <br>
+      From these results, we can conclude that there will be a large difference between the two methods when looking at high frequency parts of an image. This is because computing a weighted average in bilinear sampling helps smooth the high frequency edges and reduced the noise in the image.
+    </p>
+
+    <h1 class="display-6"> Part 6: “Level sampling” with mipmaps for texture mapping </h1>
+
+    <p class="fs-6">
+      When performing texture mapping, we run into issues that causes aliasing artifacts to appear. This happens when sampling either too high or too low resolution textures for a given image. When using a high-resolution texture, it is possible that the details within the texture image are smaller than the size of a pixel which causes aliasing. On the other hand, if using a low-resolution texture,  there is not enough detail in the images.
+      Therefore, we used level sampling to solve this problem by applying different levels of detail to the image according to the distance between the object and the viewpoint.
+      <br> <br>
+      A mipmap is like a collection of images, each one less detailed than the previous, all derived from the same original image. The idea is to use a high-resolution mipmap for parts of the image that are close to the camera and switch to lower-resolution ones for details that are farther away.
+      <br> <br>
+      To figure out the right mipmap level, we first found the differences in (u, v) coordinates between points (x + 1, y), (x, y) and the points (x, y + 1), (x, y). We then scaled the difference vectors by the width and height of the mipmap level to estimate \( (\frac{du}{dx} , \frac{dv}{dx}) \) and \( (\frac{du}{dy} , \frac{dv}{dy}) \).
+      <ul>
+        <li> The <code>L_ZERO</code> method just uses level 0: the highest resolution texture image for sampling. </li>
+        <li> <code>L_NEAREST</code> rounds the calculated L to the nearest whole number.</li>
+        <li> <code>L_LINEAR</code> blends between the floor (L) and ceil (L) level values. </li>
+      </ul>
+      With these three level sampling methods, we can use either pixel sampling method: either nearest of bilinear.
+      The tradeoffs between speed, memory usage, and antialiasing power between the three various techniques are as follows:
+      <br> <br>
+      <code>L_NEAREST</code> and <code>L_LINEAR</code> level sampling methods need a bit more memory to store lower-resolution texture images and cost to calculate the mipmap level.
+      Both methods might be quicker than <code>L_ZERO</code> sampling since it's more efficient to take a constant number of samples from downfiltered textures.
+      <code>L_ZERO</code> sampling might result in jagged textures for distant objects, and <code>L_LINEAR</code> sampling fixes this and gives smooth transitions between mipmap levels.
+
+      <br> <br>
+      The renderer can now handle different pixel sampling methods, level sampling methods, and sampling rates.
+      Bilinear sampling is slower than nearest sampling, but it gives better antialiasing for highly magnified textures. They both also use the same amount of memory.
+      Generally, increasing the sample rate by a factor of n makes rasterization more complex in both memory and time by n. However, it ensures smooth edges at all zoom levels.
+      <br> <br>
+      Below we can compare the different level and pixel sampling methods for a warped image using the Doe Library as a texture.
+    </p>
+
+    <div class="row align-items-center justify-content-center">
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_6_zero_nearest.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Level 0, Nearest Sampling - 1 sample/pixel </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_6_zero_linear.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Level 0, Bilinear Sampling - 1 sample/pixel </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row align-items-center justify-content-center">
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_6_nearest_nearest.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Nearest Level, Nearest Sampling - 1 sample/pixel </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+        <div class="card">
+          <img src="images/task_6_nearest_linear.png" class="card-img-top" alt="Image 1">
+          <div class="card-body text-center">
+            <p class="card-text"> Nearest Level, Bilinear Sampling - 1 sample/pixel </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+  </div>
+
+</body>
 </html>
