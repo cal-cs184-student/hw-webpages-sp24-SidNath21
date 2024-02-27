@@ -456,25 +456,29 @@
         </p>
 
         <p>
-            The way we performed loop subdivision is by upsampling the mesh by splitting each triangle into four by finding the midpoints of the edges of the triangle. This is called 4-1 subdivision. Following this, the way to upsample and reproduce the mesh generally is to use the edge flip and edge split operations. Specifically, we split every existing edge of the mesh in any order. Following this, we flip the new edges which connects an old vertex to a new vertex.
+            The way we performed loop subdivision is by upsampling the mesh by splitting each triangle into four subtriangles and appropriately updating vertices of the subdivided mesh based on a weighting scheme described in the diagram below. This type of subdivision is called 4-1 subdivision, and it is used to convert a coarse polygon mesh into a higher-resolution one for better display. To actually implement Loop Subdivision and upsample the mesh, we took advantage of the edge flip and edge split operations that we implemented in tasks 4/5. Specifically, we start by splitting every existing edge of the mesh in any order. Following this, we flip the new edges which connects an old vertex to a new vertex while being careful to not flip the edges that are already along the boundary of the 4-way subdivided triangles.
             <br> <br>
-            In approaching this task, I utilized the foundational mesh operations previously developed to incorporate loop subdivision functionalities into the <kbd>MeshResampler::upsample</kbd> function. This concept bears resemblance to the upsampling process in image processing, involving the subdivision of the mesh into four triangles, and the interpolation of vertex positions is accomplished through a weighted average of adjacent positions.
+            In approaching this task, we utilized the foundational mesh operations previously developed to incorporate loop subdivision functionalities into the <kbd>MeshResampler::upsample</kbd> function. This concept is similar to the upsampling process in image processing, involving the subdivision of the mesh into four triangles, and the interpolation of vertex positions is accomplished through a weighted average of adjacent positions.
         </p>
 
-        <p>
-            In precise terms, the location of current vertices is calculated using the formula \((1 - \text{num_neighbors} * u) * \text{original_position} + u * \text{neighbor_position_sum}\), where '\(u\)' is elaborated in the diagram. The position of a newly created vertex '\(v\)' dividing an edge \(AB\) linking vertices \(A\) and \(B\) and surrounded by opposing vertices \(C\) and \(D\) across the two faces connected to \(AB\) in the original mesh, follows the pattern of \(3/8 * (A + B) + 1/8 * (C + D)\).
-        </p>
 
         <div class="w-80 text-center mx-auto">
             <img src="./images/task6_diagram.jpeg" class="img-fluid" alt="Responsive image">
         </div>
 
         <p>
-            The implementation procedure includes calculating all newly positioned vertices as specified, temporarily storing these values, dividing each edge in the mesh, flipping any edge that connects an old and new vertex, and finally updating the positions of the new vertices.
+            Here are all the steps we took to implement Loop Subdivision:
+            <ol>
+                <li> First, we computed new positions for all the vertices in the original mesh using the Loop subdivision rule stated in the diagram above! According to the diagram above, the updated position of an old vertex is calculated using the formula \((1 - \text{num_neighbors} * u) * \text{original_position} + u * \text{neighbor_position_sum}\), where '\(u\)' is elaborated in the diagram. Additionally, we stored the calculated positions in <code>Vertex::newPosition</code>, an attribute of the Vertex element. We also marked each vertex as being a vertex of the original mesh through the <code>isNew</code> attribute which is used to flag whether a vertex exists in the original mesh or is a new vertex to be inserted at an edge midpoint during subdivision.</li>
+                <li> Next, we calculated the updated vertex positions associated with edges using the diagram above. The position of a new vertex '\(v\)' dividing the shared edge \(AB\) between triangles \(ABC\) and \(ABD\) can be calculated with: \(3/8 * (A + B) + 1/8 * (C + D)\). We stored these results using the <code>Edge::newPosition</code> attribute, and, once again, we used the <code>isNew</code> attribute to flag that the edge is a new edge.</li>
+                <li> After calculating the positions of both new and old verticies, we then performed the subdivision using the edge splitting method implemented in part 5. To do this, we iterated through the mesh and split every edge in.  </li>
+                <li> Since we are not splitting in a certain order, we have to perform another iteration to flip any new edges that connect to an old and new vertex.</li>
+                <li> Finally, we iterate through the mesh verticies and update the new vertex positions into the final <code>Vertex::position</code> attribute. </li>
+            </ol>
         </p>
 
         <p>
-            During the implementation, challenges arose concerning the <code>isNew</code> attribute. It became crucial to recognize the significance of correctly marking all current edges and vertices as old before initiating the upsampling process, and designating any newly created edge or vertex as new played a pivotal role. Straying from this protocol resulted in inaccuracies in the computation of vertex positions. However, despite these obstacles, the overall implementation process progressed relatively seamlessly.
+            During the implementation, we had troubles with setting the <code>isNew</code> attribute and also how to avoid infinitely looping while traversing through the mesh edges. We made sure to correctly mark all current edges and vertices as old before starting the upsampling process. Additionally, we had to make sure to designate any newly created edge or vertex as a new element. However, despite these obstacles, the overall implementation process progressed relatively seamlessly.
         </p>
 
         <p class="fs-6 fw-medium">
@@ -604,7 +608,7 @@
         </div>
 
         <p>
-            If we don’t pre-process the cube, we observe that the subdivisions eventually cause the mesh to become asymmetric with respect to the horizontal and vertical axis of the plane. A mesh of a cube shouldn't look like this!
+            If we don’t pre-process the cube, we observe that the subdivisions eventually cause the mesh to become asymmetric. A mesh of a cube shouldn't look like this!
         </p>
 
         <hr>
