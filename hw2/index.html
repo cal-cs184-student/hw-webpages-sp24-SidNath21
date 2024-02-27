@@ -1,7 +1,677 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 2 index.html here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <style>
+
+    </style>
+    <title>CS 184/284A Rasterizer</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+</head>
+
+
+<body>
+
+<div class="main-description mt-3">
+
+    <h1 class="display-3 text-center fw-medium"> Homework 2: Mesh Edit  </h1>
+    <p class="lead text-center fs-3"> CS 184/284A: Computer Graphics and Imaging, Spring 2024 </p>
+    <p class="text-center fs-2"> Siddharth Nath & Ansh Verma </p>
+    <div style="width: 80%;" class="mx-auto">
+        <!--    <div class="d-grid gap-2 d-md-flex justify-content-md-center">-->
+        <!--      <button class="btn btn-outline-primary me-md-2" type="button" onClick="document.getElementById('image-quilting').scrollIntoView();""> Image Quilting </button>-->
+        <!--      <button class="btn btn-outline-primary" type="button" onClick="document.getElementById('neural-style-transfer').scrollIntoView();"> Neural Algorithm of Artistic Style </button>-->
+        <!--    </div>-->
+        <hr />
+    </div>
+
+</div>
+
+<br><br>
+
+<div class="project-body mx-auto" style="width: 80%;">
+    <div class="project-overview">
+        <h1 class="display-5"> Project Overview </h1>
+        <p class="fs-6">
+            In this project we learned about geometric modeling through building Bezier curves and surfaces with de Casteljau’s algorithm, manipulating triangle meshes with the half-edge data structure, and implementing algorithms for loop subdivision.
+        <p class="fs-6">
+        We found building Bezier curves to be an interesting part of this project because of how widespread Bezier curves are in graphics and everyday life. From front design to animation, Bezier curves are integrated in many different areas which is why coding the implementation for Bezier curves and surfaces was a valuable experience.
+        Additionally, directly working with half-mesh data structure was valuable as we were able to see the advantages of this data structure for performing mesh operations over naive data-structures that aren’t as efficient.
+        </p>
+    </div>
+
+    <div class="section_I py-4">
+
+        <h1 class="display-5"> Section I: Bezier Curves and Surfaces </h1>
+        <hr>
+
+        <h1 class="display-6"> Part 1: Bezier Curves with 1D de Casteljau Subdivision </h1>
+
+        <p class="fs-6 fw-medium">
+            Briefly explain de Casteljau's algorithm and how you implemented it in order to evaluate Bezier curves.
+        </p>
+
+        <p class="fs-6">
+            De Casteljau's algorithm is a recursive method that uses a set of control points to define a Bézier curve and calculate a point on the curve.
+            This algorithm works by recursively linearly interpolating between consecutive pairs of control points until we are left with a single point.
+            <br> <br>
+            Given n points \(p_0 ... p_n \), a single iteration of this algorithm is responsible for computing a new series of points \(p'_0 ... p'_{n-1} \).
+        </p>
+
+        <p>
+            In part one of this project, we implemented the <kbd>BezierCurve::evaluateStep</kbd> method which performs one step of this algorithm.
+            This method evaluates one step of de Casteljau's algorithm with linear interpolation on the \(n\) given points and the scalar parameter \(t\) to return the \(n-1\) interpolated points.
+            <br> <br>
+            To recap, linear interpolation, or the lerp function, takes as input two points \(p_i\) and \(p_{i+1}\) and a variable \(t\), and returns \( (1 - t) * p_i + t * p_{i+1} \) to get the output point \(p’_i\).
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Take a look at the provided .bzc files and create your own Bezier curve with 6 control points of your choosing. Use this Bezier curve for your screenshots below.
+        </p>
+
+        <p class="fs-6">
+            After creating our own .bzc file (<code>curve3.bzc)</code>, we created our own Bezier curve with 6 control points:
+        </p>
+
+        <div class="w-80 text-center mx-auto">
+            <img src="./images/task1_bzc_file.png" class="img-fluid" alt="Responsive image">
+        </div>
+
+        <p class="fs-6 fw-medium">
+            Show screenshots of each step / level of the evaluation from the original control points down to the final evaluated point. Press E to step through. Toggle C to show the completed Bezier curve as well.
+        </p>
+
+        <p>
+            Here we start to perform the de Casteljau Algorithm, which results in the blue curve seen below. This curve contains the 5 resulting points from the algorithm in addition to the final Bezier curve. This process continues to happen until we are left with the final point which is a point on the final white Bezier curve.
+        </p>
+
+        <div class="container grid-container">
+
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task1_step0.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Step 0 </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task1_step1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Step 1 </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task1_step2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Step 2 </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task1_step3.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Step 3 </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task1_step4.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Step 4 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task1_step5.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Step 5 </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <p class="fs-6 fw-medium">
+            Show a screenshot of a slightly different Bezier curve by moving the original control points around and modifying the parameter
+            via mouse scrolling.
+        </p>
+
+        <div class="row align-items-center justify-content-center">
+            <div class="col-lg-10 col-md-12 col-sm-12 mb-4">
+                <div class="card">
+                    <img src="images/task1_different_curve.png" class="card-img-top" alt="Image 1">
+                    <div class="card-body text-center">
+                        <p class="card-text"> Bezier curve with modified control points </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>
+            Finally, we have the modified Bezier curve, where we can see how the result of moving around the original control points affects the resulting Bezier points and Bezier curve. Additionally, this curve shows what happens when we change the value of t!
+        </p>
+
+        <h1 class="display-6"> Part 2: Bezier Surfaces with Separable 1D de Casteljau </h1>
+
+        <p class="fs-6 fw-medium">
+            Briefly explain how de Casteljau algorithm extends to Bezier surfaces and how you implemented it in order to evaluate Bezier surfaces.
+        </p>
+
+        <p class="fs-6">
+            De Casteljau’s algorithm extends to Bezier surfaces by being a parametric equation between u and v instead of just t. The new algorithm works as follows:
+            <ol>
+                <li>
+                    \( q(i, u) \) = apply de Casteljau’s algorithm with parameter u to the ith row of the control points
+                </li>
+                <li>
+                    \( p(u, v) \) = apply de Casteljau’s algorithm with parameter v to all q(i, u)
+                </li>
+            </ol>
+            Return \( p(u, v) \)
+        </p>
+
+        <p>
+            To summarize the algorithm above, when working with a Bezier patch (n by n grid of control points), we first interpolate each row of points using the parameter \(u\) just like the 1D case. The result is n new interpolated control points, each one defining a different Bezier curve.
+            With these n points, we use the same algorithm (this time using parameter \( v \) to obtain the single point that lies on the Bezier surface.
+        </p>
+
+        <p>
+            To make this possible, we implemented three functions to complete the implementation of Casteljau’s algorithms.
+            First, we reimplemented evaluateStep, this time for Bezier Surfaces: <kbd>BezierPatch::evaluateStep</kbd> - The code for this function was the exact same as the code we implmented in part 1.
+            Then, we implemented the function <kbd>BezierPatch::evaluate1D</kbd> which uses <kbd>BezierCurve::evaluateStep</kbd> from part 1 to Fully evaluate de Casteljau's algorithm for a vector of points at scalar parameter \(t\).
+            Finally, we implemented <kbd>BezierPatch::evaluate</kbd> which evaluates the Bezier patch at parameter \((u, v)\) using the algorithm described above.
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show a screenshot of bez/teapot.bez (not .dae) evaluated by your implementation.
+        </p>
+
+
+        <div class="row align-items-center justify-content-center">
+            <div class="col-lg-10 col-md-12 col-sm-12 mb-4">
+                <div class="card">
+                    <img src="images/task2_teapot.png" class="card-img-top" alt="Image 1">
+                    <div class="card-body text-center">
+                        <p class="card-text"> teapot.bez </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="section_2 py-4">
+
+        <h1 class="display-5"> Section II: Triangle Meshes and Half-Edge Data Structure </h1>
+        <hr>
+
+        <h1 class="display-6"> Part 3: Area-Weighted Vertex Normals </h1>
+
+        <p class="fs-6 fw-medium">
+            Briefly explain how you implemented the area-weighted vertex normals.
+        </p>
+
+        <p class="fs-6">
+            In this part of the assignment, we implemented the area-weighted vertex normals as this feature can be used for Phong shading, which provides better shading for smooth surfaces than flat shading.
+            <br> <br>
+            To get started, we first had to familiarize ourselves with the half-edge data structure which we did by looking at the provided halfedgeMesh.h file.
+            Additionally, we consulted the <a href="https://cs184.eecs.berkeley.edu/sp24/docs/half-edge-intro" target = "_blank">half-edge intro</a> and the <a href="https://cs184.eecs.berkeley.edu/sp24/docs/half-edge-primer" target = "_blank">half-edge-primer</a> documentation to understand how the half edges, edges, vertices, and faces interact with each other.
+            <br> <br>
+            With this background information, we were able to compute an area-weighted normal at a given vertex V by iterating through each neighboring triangle face.
+            <br> <br>
+            For each face, we first calculate two separate vectors describing two edges of the triangle face. We do this by accessing the position attribute of each vertex and subtracting adjacent vertex positions to get 2 vectors. Finally, we calculated the Vector3D normal vector with a cross product and appended the resulting vector to our normalVectors vector.
+            <br> <br>
+            By manipulating the half-edge pointers and iteratively calling <code>h -> next() -> twin()</code>, we were able to successfully move on to the next incident face before repeating the steps above.
+            Once we had collected all the normal vectors for each triangle face, the last step was to sum up all the normal vectors and normalize the resulting vector.
+            <br> <br>
+            After implementing the <kbd>Vector3D Vertex::normal</kbd> function, we were able to generate the resulting teapot renderings. The images below show the significance of shading with and without vertex normals.
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show screenshots of dae/teapot.dae (not .bez) comparing teapot shading with and without vertex normals. Use Q to toggle default flat shading and Phong shading.
+        </p>
+
+        <div class="container grid-container">
+
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task3_flat_shading.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Flat Shading </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task3_phong_shading.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Phong Shading </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <h1 class="display-6"> Part 4: Edge Flip </h1>
+
+        <p class="fs-6 fw-medium">
+            Briefly explain how you implemented the edge flip operation and describe any interesting implementation / debugging tricks you have used.
+        </p>
+
+        <p class="fs-6">
+            For part 4 of this project, we implemented a local remeshing operation on an edge, called a flip. Implementing operations such as the edge flip is important as it now allows us to have more control over the mesh structure and manipulate the structure as needed.
+            The flip operation on the shared edge (b, c) of a given pair of triangles (a,b,c) and (c,b,d), converts the original pair of triangles into a new pair (a,d,c) and (a,b,d), as shown below.
+        </p>
+
+        <div class="w-80 text-center mx-auto">
+            <img src="./images/task4_edge_flip.jpeg" class="img-fluid" alt="Responsive image">
+        </div>
+
+        <p class="fs-6">
+            To implement this operation we followed the following steps:
+            <ol>
+                <li>
+                    We first drew a simple mesh of the pair of triangles (a,b,c) and (c,b,d) above, and we listed down all the mesh elements, i.e., half-edges, vertices, edges, and faces.
+                </li>
+                <li>
+                    With this drawing, we also drew the mesh after the remeshing operation and, once again, we wrote down a list of all elements in the now modified mesh.
+                </li>
+                <li>
+                    For every element in the modified mesh, we carefully set all of its pointers to the correct element in the modified mesh, even if the element being pointed to has not changed.
+                    This part of the implementation was the most importance since we had to keep track of many different pointers!
+                    <ul>
+                        <li>
+                            For each vertex, edge, and face, set its halfedge pointer.
+                        </li>
+                        <li>
+                            For each half-edge, set its next, twin, vertex, edge, and face pointer to the correct element. We took advantage of the <kbd>Halfedge::setNeighbors(...)</kbd> method to set all pointers of a half-edge at once (twin, next, vertex, edge, face).
+                        </li>
+                    </ul>
+                </li>
+
+            </ol>
+        </p>
+
+        <p>
+            As described above, we first drew a detailed diagram of the simple triangle mesh before and after the edge flip:
+        </p>
+
+        <div class="w-80 text-center mx-auto">
+            <img src="./images/task4_diagram.jpg" class="img-fluid" alt="Responsive image">
+        </div>
+
+        <p>
+            With this diagram in hand, we first collected all the relevant elements HalfedgeIter h1→h10, VertexIter v1→v4, EdgeIter e1→e5, and FaceIter f1,f2.
+            Then we made sure to not flip a boundary edge by using the <kbd>isBoundary()</kbd> function to see if either face (f1, f2) is a boundary element.
+            Finally, we reassigned all pointers by following our detailed diagram.
+            <br> <br>
+            With this function implemented we were successfully able to flip edges of our mesh. The screenshots below depict the mesh before and after performing some edge flips.
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show screenshots of the teapot before and after some edge flips.
+        </p>
+
+        <div class="container grid-container">
+
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task4_before_flip.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Mesh before Edge Flips </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task4_after_flip.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Mesh after Edge Flips </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h1 class="display-6"> Part 5: Edge Split </h1>
+
+        <p class="fs-6 fw-medium">
+            Briefly explain how you implemented the edge split operation and describe any interesting implementation / debugging tricks you have used.
+        </p>
+
+        <p class="fs-6">
+            In Part 5 of this project, we implemented another local remeshing operation on an edge, called a split.
+            Given a pair of triangles (a,b,c) and (c,b,d), a split operation on their shared edge (b,c) inserts a new vertex m at its midpoint and connects the new vertex to each opposing vertex a and d, yielding four triangles as shown below:
+        </p>
+
+        <div class="w-80 text-center mx-auto">
+            <img src="./images/task5_edge_split.jpg" class="img-fluid" alt="Responsive image">
+        </div>
+
+        <p>
+            Similar to part 4 of this project, we first started by drawing a detailed diagram depicting all the mesh elements before and after an edge split.
+        </p>
+        <div class="w-80 text-center mx-auto">
+            <img src="./images/task5_diagram.jpg" class="img-fluid" alt="Responsive image">
+        </div>
+        <p>
+            Since splitting involves adding new mesh elements, e.g., a new vertex, two new triangles, three new edges, and etc, , we had to deal with more pointers which was difficult to keep track of which is why having a detailed diagram was essential for implementing VertexIter HalfedgeMesh::splitEdge( EdgeIter e0 )
+            <br> <br>
+            Another similarity to part 4 is that we had to ignore requests to split boundary edges. Once again, we used the isBoundary() function to see if either face (f1, f2) is a boundary element.
+            <br> <br>
+            After carefully reassigning all the pointers according to our diagram, we were able to perform edge splits to our mesh. The images below display our mesh before and after performing some edge splits
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show screenshots of a mesh before and after some edge splits.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task4_before_flip.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Mesh before Edge Splits </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task5_after_split.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Mesh after Edge Splits </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>
+            Additionally, since we have the function for both edge splits and edge flips, we performed a combination of the two operations to get the following results.
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show screenshots of a mesh before and after a combination of both edge splits and edge flips.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task4_before_flip.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Mesh before Edge Splits and Flips </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task5_after_flip_and_split.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Mesh after Edge Splits and Flips </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h1 class="display-6"> Part 6: Loop Subdivision for Mesh Upsampling </h1>
+
+        <p class="fs-6 fw-medium">
+            Briefly explain how you implemented the loop subdivision and describe any interesting implementation / debugging tricks you have used.
+        </p>
+
+        <p>
+            The way we performed loop subdivision is by upsampling the mesh by splitting each triangle into four by finding the midpoints of the edges of the triangle. This is called 4-1 subdivision. Following this, the way to upsample and reproduce the mesh generally is to use the edge flip and edge split operations. Specifically, we split every existing edge of the mesh in any order. Following this, we flip the new edges which connects an old vertex to a new vertex.
+            <br> <br>
+            In approaching this task, I utilized the foundational mesh operations previously developed to incorporate loop subdivision functionalities into the <kbd>MeshResampler::upsample</kbd> function. This concept bears resemblance to the upsampling process in image processing, involving the subdivision of the mesh into four triangles, and the interpolation of vertex positions is accomplished through a weighted average of adjacent positions.
+        </p>
+
+        <p>
+            In precise terms, the location of current vertices is calculated using the formula \((1 - \text{num_neighbors} * u) * \text{original_position} + u * \text{neighbor_position_sum}\), where '\(u\)' is elaborated in the diagram. The position of a newly created vertex '\(v\)' dividing an edge \(AB\) linking vertices \(A\) and \(B\) and surrounded by opposing vertices \(C\) and \(D\) across the two faces connected to \(AB\) in the original mesh, follows the pattern of \(3/8 * (A + B) + 1/8 * (C + D)\).
+        </p>
+
+        <div class="w-80 text-center mx-auto">
+            <img src="./images/task6_diagram.jpeg" class="img-fluid" alt="Responsive image">
+        </div>
+
+        <p>
+            The implementation procedure includes calculating all newly positioned vertices as specified, temporarily storing these values, dividing each edge in the mesh, flipping any edge that connects an old and new vertex, and finally updating the positions of the new vertices.
+        </p>
+
+        <p>
+            During the implementation, challenges arose concerning the <code>isNew</code> attribute. It became crucial to recognize the significance of correctly marking all current edges and vertices as old before initiating the upsampling process, and designating any newly created edge or vertex as new played a pivotal role. Straying from this protocol resulted in inaccuracies in the computation of vertex positions. However, despite these obstacles, the overall implementation process progressed relatively seamlessly.
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Take some notes, as well as some screenshots, of your observations on how meshes behave after loop subdivision. What happens to sharp corners and edges? Can you reduce this effect by pre-splitting some edges?
+        </p>
+
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cow0.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cow.dae</code> - Step 0 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cow1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cow.dae</code> - Step 1 Loop Subdivision  </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cow2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cow.dae</code> - Step 2 Loop Subdivision  </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_weird0.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>weird.dae</code> - Step 0 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_weird1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>weird.dae</code> - Step 1 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_weird2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>weird.dae</code> - Step 2 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <p class="fs-6">
+            From above, we can see that as subdivision occurs the corners and edges tend to get smoother which takes away from the underlying mesh structure. From our observation in the section below with <code>cube.dae</code>, yes, pre-splitting some of the edges does end up reducing the smoothing of corners and edges.
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Load dae/cube.dae. Perform several iterations of loop subdivision on the cube. Notice that the cube becomes slightly asymmetric after repeated subdivisions. Can you pre-process the cube with edge flips and splits so that the cube subdivides symmetrically? Document these effects and explain why they occur. Also explain how your pre-processing helps alleviate the effects.
+        </p>
+
+        <h5> <code>cube.dae</code> Loop Subdivision WITHOUT preprocessing </h5>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube0.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 0 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 1 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 2 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube3.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 3 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube4.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 4 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>
+            If we don’t pre-process the cube, we observe that the subdivisions eventually cause the mesh to become asymmetric with respect to the horizontal and vertical axis of the plane. A mesh of a cube shouldn't look like this!
+        </p>
+
+        <hr>
+        <p>
+            To alleviate the smoothing effects that happens without preprocessing, we first notices that the diagonal edges on each face is asymmetric which is likely causing the errors seen above.
+            To make the edges symmetric, we split each edge of all 6 faces such that each face has the same edge splits and orientation. This results in a Loop subdivision process that divides the cube symmetrically as shown below.
+        </p>
+
+        <h5> <code>cube.dae</code> Loop Subdivision WITH preprocessing </h5>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube0_.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 0 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube1_.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 1 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube2_.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 2 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube3_.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 3 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/task6_cube4_.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> <code>cube.dae</code> - Step 4 Loop Subdivision </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+</div>
+
+</body>
 </html>
+
