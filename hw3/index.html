@@ -1,7 +1,1028 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 3 index.html here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <style>
+
+  </style>
+  <title>CS 184/284A Rasterizer</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+</head>
+
+
+<body>
+
+<div class="main-description mt-3">
+
+  <h1 class="display-3 text-center fw-medium"> Homework 3-1: Path Tracer  </h1>
+  <p class="lead text-center fs-3"> CS 184/284A: Computer Graphics and Imaging, Spring 2024 </p>
+  <p class="text-center fs-2"> Siddharth Nath & Ansh Verma </p>
+  <div style="width: 80%;" class="mx-auto">
+    <!--    <div class="d-grid gap-2 d-md-flex justify-content-md-center">-->
+    <!--      <button class="btn btn-outline-primary me-md-2" type="button" onClick="document.getElementById('image-quilting').scrollIntoView();""> Image Quilting </button>-->
+    <!--      <button class="btn btn-outline-primary" type="button" onClick="document.getElementById('neural-style-transfer').scrollIntoView();"> Neural Algorithm of Artistic Style </button>-->
+    <!--    </div>-->
+    <hr />
+  </div>
+
+</div>
+
+<br><br>
+
+<div class="project-body mx-auto" style="width: 80%;">
+  <div class="project-overview">
+    <h1 class="display-5"> Project Overview </h1>
+    <p class="fs-6">
+      In this project, we implement the core routines of a physically-based renderer using a path tracing algorithm. We used knowledge from ray-scene intersections, BVH acceleration structures, and physically based lighting and materials to do so.
+    <p class="fs-6">
+      We found building the BVH acceleration structure was a valuable part of this project because of how efficient it is. We notice how using the BVH acceleration structure significantly sped-up our rendering pipeline which goes to show how designing and implementing efficient data structures is needed in the real world!
+      Additionally, learning about the physics behind ray tracing and implementing algorithms based on that allows us to better understand the complex equations used to model different materials/light.
+    <br> </br>
+    Overall, we enjoyed this project because of the challenge; additionally, working through every section of the project to iteratively build the path tracing renderer was a rewarding experience. In particular, we found that this project gave us the opportunity to instill the concepts taught in class.
+  </p>
+
+  </div>
+
+  <div class="section_I py-4">
+
+    <h1 class="display-6"> Part 1: Ray Generation and Scene Intersection (20 points) </h1>
+
+    <p class="fs-6 fw-medium">
+      Walk through the ray generation and primitive intersection parts of the rendering pipeline.
+    </p>
+
+    <p class="fs-6">
+      The rendering pipeline begins with the generation of camera rays, a crucial step in simulating the view of the scene.
+      This process occurs within the <code>raytrace_pixel</code> function of the <kbd>PathTracer</kbd> class, where rays are created for each pixel of the image.
+      Utilizing a sampler, multiple samples within each pixel are generated to account for antialiasing effects and to reduce noise.
+      For each sample, the <code>generate_ray()</code> function in the <kbd>Camera</kbd> class computes the direction of the ray based on the camera's position, orientation, and field of view.
+      By normalizing the screen coordinates of the pixel sample, the direction vector of the ray is determined, originating from the camera's position.
+      Subsequently, these rays are passed into the ray tracing pipeline for further processing.
+    </p>
+
+    <p class="fs-6">
+      The next critical aspect of the rendering pipeline involves determining intersections between these rays and the scene's geometry primitives.
+      This intersection testing is performed within the <code>intersect()</code> functions of the <kbd>Sphere</kbd> and <kbd>Triangle</kbd> classes.
+      In the case of spheres, the intersect function employs the ray-sphere intersection test to ascertain whether a given ray intersects with the sphere.
+      Similarly, in triangles, ray-triangle intersections are computed using barycentric coordinates.
+      Upon finding an intersection within the valid interval (<code>min_t</code> to <code>max_t</code>), the intersection details, including the distance along the ray (<code>t</code>), the surface normal (<code>n</code>), and the material properties (<code>bsdf</code>), are recorded in an <code>Intersection</code> object.
+    </p>
+
+    <p class="fs-6">
+      These intersection records serve as crucial components for subsequent shading computations during the rendering process.
+      They contain essential information about the intersections, allowing for the evaluation of materials, lighting interactions, and other shading effects. T
+      Together, the ray generation and primitive intersection components form the foundation of the ray tracing pipeline, facilitating the traversal of rays through the scene and the identification of intersections with scene geometry. This is ultimately what allows us to render realistic images in the later parts of this project.
+    </p>
+
+    <p class="fs-6 fw-medium">
+      Explain the triangle intersection algorithm you implemented in your own words.
+    </p>
+
+    <p class="fs-6">
+      The triangle intersection algorithm we implemented is based on the Möller–Trumbore algorithm. This algorithm is a fast and efficient method for ray-triangle intersection testing.
+      It involves solving equations to find the intersection point's barycentric coordinates, and checking if these values are valid.
+      As presented in lecture, the Möller–Trumbore algorithm is as follows:
+    </p>
+
+    <div class="w-50 text-center mx-auto">
+      <img src="./images/trumbore_algorithm.jpeg" class="img-fluid" alt="Responsive image">
+    </div>
+
+    <p class="fs-6">
+      As shows above, this algorithm uses efficient matrix multiplication to return a solution vector \( [t, b_1, b_2] \) where t represents the time of intersection, and \( b_1, b_2 \) are barycentric coordinates associated with the triangle-ray intersection. Since \( b_1 + b_2 + b_3 = 1\) , we can easily calculuate \( b_3 \) from the solution vector!
+      <br> <br>
+      The reason this algorithm works is that we can define a point \( p \) to be inside the triangle defined by verticies \( P_1, P_2, P_3\) with the barycentric coordinates. We also know that the equation of a ray is \( r(t) = O + tD \) for non-negative t.
+      Setting the point \( p = b_1 * P_1 + b_2 * P_2 + b_3 * P_3\) to the equation of the ray, we solve for the unknowns using Möller–Trumbore's algorithm.
+    </p>
+
+    <p>
+      To verify if the ray-triangle intersection is valid, we first check to see if any of the barycentric coordinates are negative or if their sum exceeds 1. If so, this means that the intersection point is outside the triangle, and, therefore, there is no valid intersection.
+      Additionally, we also verify if the value \( t \) is between <code>r.min_t</code> and <code>r.max_t</code>. If the intersection point is within the triangle and also lies within the specified range of the ray, then there's a valid intersection.
+
+    </p>
+
+    <p class="fs-6">
+      In essence, this algorithm efficiently determines if a ray intersects a triangle and provides information about the intersection, which is crucial for rendering and ray tracing applications.
+    </p>
+
+    <p class="fs-6 fw-medium">
+      Show images with normal shading for a few small .dae files.
+    </p>
+
+    <div class="container grid-container">
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/CBspheres.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> CBspheres_lambertian.dae </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/CBcoil.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> CBcoil.dae </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/CBgems.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> CBgems.dae </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bench.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> bench.dae </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="section_I py-4">
+
+
+
+    <h1 class="display-6"> Part 2: Bounding Volume Hierarchy (20 Points) </h1>
+
+    <p class="fs-6 fw-medium">
+      Walk through your BVH construction algorithm. Explain the heuristic you chose for picking the splitting point.
+    </p>
+
+    <p class="fs-6">
+      The BVH construction algorithm begins by initializing the BVH with the given primitives and maximum leaf size.
+      It then computes the bounding box of the entire scene by iterating through all the primitives in the scene and calling <code>bbox.expland()</code> on each primative's bounding box.
+      After the for-loop, the resulting BBox bbox becomes the bounding volume of the root node of the BVH. While iterating through all the primitives, we also keep track of the average centroid of all the primitives which we to pick the splitting point!
+      If the number of primitives in the current node is less than or equal to <code> max_leaf_size</code>, the node becomes a leaf node, and the recursion ends.
+    </p>
+
+    <p class="fs-6">
+      Otherwise, the primitives are split into two groups (a "left" and "right" collection) based on their centroids along each axis (X, Y, Z). To do this, we start by initializing 6 different vectors: <code>left_x, right_x, left_y, right_y, left_z, right_z </code>. Then, we once again iterate through all the primitives, and for each axis we compare the average_centroid's value with the primitive's value.
+      For each primitive, we conduct three different comparisons between the primitive's centroid values and the average bounding box value - one of each axis x,y,z. Based on these comparisons, we assign each primitive to the respective left or right collection.
+      Our splitting aims to create a balanced tree, and to do so we needed a way to decide which axis we should split on. Our algorithm evaluates which axis results in a more balanced partition by comparing the difference in the number of primitives on each side of the splitting plane along each axis and choosing the axis with the minimum difference.
+    </p>
+
+    <p>
+      The axis with the smallest imbalance is chosen for splitting, ensuring a well-balanced BVH tree.
+      The primitives are then recursively partitioned into left and right child nodes using the selected axis.
+      Finally, the current node's start and end iterators are updated, representing the range of primitives it contains, and the constructed node is returned.
+    </p>
+
+    <p>
+      The splitting heuristic prioritizes balance to avoid highly skewed BVH structures, which could lead to inefficient traversal and rendering performance. By creating a balanced BVH tree, the algorithm aims to reduce the average number of intersection tests required during ray traversal, ultimately improving rendering efficiency.
+    </p>
+
+    <p class="fs-6 fw-medium">
+      Show images with normal shading for a few large .dae files that you can only render with BVH acceleration.
+    </p>
+
+
+    <div class="container grid-container">
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/peter.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> peter.dae </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/maxplanck.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> maxplanck.dae </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/dragon.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> dragon.dae </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/CBlucy.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> CBlucy.dae </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <p class="fs-6 fw-medium">
+      Compare rendering times on a few scenes with moderately complex geometries with and without BVH acceleration. Present your results in a one-paragraph analysis.
+    </p>
+
+    <table class="table">
+      <thead>
+      <tr>
+        <th scope="col">File Name</th>
+        <th scope="col">Rendering Time <b>without</b> BVH Acceleration</th>
+        <th scope="col">Rendering Time <b>with</b> BVH Acceleration</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <th scope="row"> peter.dae </th>
+        <td>184.4189s</td>
+        <td>0.3155s</td>
+      </tr>
+      <tr>
+        <th scope="row"> maxplanck.dae </th>
+        <td>217.9754s</td>
+        <td>0.2628s</td>
+      </tr>
+      <tr>
+        <th scope="row"> dragon.dae</th>
+        <td>474.1679s</td>
+        <td>0.3944s</td>
+      </tr>
+      <tr>
+        <th scope="row"> CBlucy.dae </th>
+        <td>659.6499s</td>
+        <td>0.4969s</td>
+      </tr>
+      </tbody>
+    </table>
+
+    <p class="fs-6">
+      These results reveal the importance of using BVH Acceleration to significantly reduce the time it takes to generate renders.
+      Without BVH, the starter code naively checks for ray intersection with all primitives in a given scene. Although this may be feasible for simpler scnenes that don't have man primitives, once we scale up the size of the scene the naive approach becomes computationally infeasible.
+      With BVH, we can avoid redundant computation by reducing the number of ray intersections we have to check for!
+    </p>
+
+  </div>
+
+  <div class="section_2 py-4">
+
+    <h1 class="display-6"> Part 3: Direct Illumination (20 Points) </h1>
+
+    <p class="fs-6 fw-medium">
+      Walk through both implementations of the direct lighting function.
+    </p>
+
+    <p class="fs-6">
+      In part 3, we aim to simulate the light transport in the scene to enable rendering images with realistic shading.
+      Before we implemented the uniform random sampling and the importance sampling – two methods of the direct lighting function – we first had to modify the BSDF class.
+      BSDF stands for Bidirectional Scattering Distribution Function, which is a generalization of the BRDF to represent materials that can both reflect and transmit light.
+      The BRDF function is parameterized by an incoming light direction and an outgoing direction, and this function quantifies the ratio of incoming light scattered from the incident direction to the outgoing direction.
+    </p>
+
+    <p class="fs-6">
+      The first function we modified is <kbd>DiffuseBSDF::f</kbd> which is used to represent a diffuse material that reflects incoming light equally in all directions on the hemisphere.
+      These materials are called Lambertian as their reflectance reflects equally in all directions of a hemisphere.
+      Therefore, the function <kbd>DiffuseBSDF::f</kbd> takes as input the incoming solid angle \( w_i \) and the outgoing solid angle \( w_o \) and returns \( \rho/\pi \) where where \( \rho \) is the albedo and \(1 / \pi\) is the normalizing factor.
+    </p>
+
+    <p class="fs-6">
+      Another function we implemented was <kbd>PathTracer::zero_bounce_radiance</kbd>, which takes as input a <code>Ray</code> and the <code>Intersection</code> object.
+      Zero-bounce illumination describes the light that reaches the camera without bouncing off any objects in the scene. In other words, we  describe zero-bounce illumination as the direct light coming from a light source.
+      This function returns the emission of the intersected object with this line of code: <code>isect.bsdf->get_emission();</code>
+    </p>
+
+    <p class = "fs-6">
+      <b>Uniform hemisphere sampling</b> works to estimate the direct lighting on a point by sampling uniformly in a hemisphere.
+      The motivation behind uniform hemisphere sampling is that it allows us to estimate how much light arrived at the intersection point which will be used to determine the final color of our corresponding pixel.
+      For this task:
+      <ol>
+        <li> We iterate num_sample times and uniformly sample an incoming ray direction in the hemisphere. </li>
+        <li>
+          Then, we immediately check if a new ray going from the hit_p in the sampled direction intersects a light source.
+          <ul>
+            <li> If there is no intersection, we simply skip over the sample since it doesn’t contribute any direct light to the point of interest. </li>
+            <li> However, if there is an intersection, we weigh the light emission by the bsdf function and the cosine of the vector /( w_i \).  </li>
+          </ul>
+        </li>
+        <li> Additionally, we make sure to normalize the light with the pdf - the value of the probability density function evaluated at the /(w_i/) direction. </li>
+
+      </ol>
+
+    </p>
+
+    <p class="fs-6">
+
+      <b>Importance Sampling</b> is another method of direct lighting function that aims to reduce the noise from uniform hemisphere sampling. Here are the steps we took to implement this method:
+      <ol>
+        <li> In <kbd>estimate_direct_lighting_importance()</kbd>, we first iterate through all the lights in a given scene with <code>scene->lights</code>. The reason for this is that we want to sample all the lights directly instead of sampling uniform directions in a hemisphere. </li>
+        <li>
+          While iterating through the lights, we check if a given light is a point light source or not.
+          <ul>
+            <li> If it is a point light source, we can save time by sampling the light source only once since all samples from a point light are guaranteed to be the same. </li>
+            <li> However, if the light source isn’t a point light source, we use <code>ns_area_light</code> samples instead of one! </li>
+          </ul>
+        </li>
+        <li> Now that we know how many samples to take (either 1 or <code>ns_area_light</code>), we call <kbd>SceneLight::sample_L</kbd> to get the unit /( w_i /) vector (in world-space) representing the sampled direction between p and the light source. </li>
+        <li> The following logic is similar to the implementation of uniform hemisphere sampling as we now cast a ray in this direction and check to see if there is an intersection.</li>
+      </ol>
+
+
+
+    </p>
+
+
+    <hr>
+
+    <p class="fs-6 fw-medium">
+      Show some images rendered with both implementations of the direct lighting function.
+    </p>
+
+    <div class="container grid-container">
+
+      <div class="row">
+        <p class="col-6 fw-medium text-center"> <u>Uniform Hemisphere Sampling</u> </p>
+        <p class="col-6 fw-medium text-center"> <u>Importance Sampling</u> </p>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_H_64_32.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Uniform hemisphere sampling - CBspheres_lambertian.dae </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_64_32.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Importance Sampling - CBspheres_lambertian.dae </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/CBbunny_H_64_32.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Uniform hemisphere sampling - CBbunny.dae </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_64_32.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Importance Sampling - CBbunny.dae </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <p class="fs-6 fw-medium">
+      Compare the results between uniform hemisphere sampling and lighting sampling in a one-paragraph analysis.
+    </p>
+
+    <p class="fs-6">
+      The results between uniform hemisphere sampling and lighting sampling as shown above reveal that uniform hemisphere sampling is more prone to noise while lighting sampling produces sharper and smoother results.
+      The reason for this is that in uniform hemisphere sampling, only a select amount of rays that we shoot out from the hit point directly intersect a light source.
+      As a result, the renderings for uniform hemisphere sampling contain many dark, noisy spots that make the output look grainy.
+    </p>
+
+    <p class="fs-6 fw-medium">
+      Focus on one particular scene with at least one area light and compare the noise levels in <b>soft shadows</b> when rendering with 1, 4, 16, and 64 light rays (the -l flag) and with 1 sample per pixel (the -s flag) using light sampling, <b>not</b> uniform hemisphere sampling.
+    </p>
+
+    <div class="container grid-container">
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_1_1.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 1 Light Ray (bunny.dae) </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_1_4.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 4 Light Rays (bunny.dae) </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_1_16.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 16 Light Rays (bunny.dae) </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_1_64.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 64 Light Rays (bunny.dae) </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <p class="fs-6">
+      From the results above, we see that as the number of light rays increases there is less noise in the renders.
+      The biggest visual difference between the 1 light ray and the 64 light rays examples is the difference in appearance of the shadows.
+      With more rays of light, the shadows of the bunny appear to be more smooth and less grainy. This is because having less light rays prevents the rendered from averaging out the noise of the individual shadow pixels.
+      With more light rays, the pixels of the shadow rays are more dispersed and subsequently help average out the noise caused when there is a smaller amount of light rays.
+    </p>
+
+
+
+  </div>
+
+
+
+  <div class="section_2 py-4">
+
+
+    <h1 class="display-6"> Part 4: Global Illumination (20 Points) </h1>
+
+    <p class="fs-6 fw-medium">
+      Walk through your implementation of the indirect lighting function.
+    </p>
+
+    <h5> Background </h5>
+
+    <p class="fs-6">
+      In part 4 of this project, we improve upon the direct lighting function from part 3 by now adding code to render images with full global illumination.
+      In the real world, the visual richness of many renders comes from indirect lighting effects which is why implementing the indirect lighting function is so important.
+    </p>
+
+    <p class="fs-6">
+      To enable the indirect lighting function, we first modified <kbd>est_radiance_global_illumination</kbd> to calculate <code>L_out</code> as <kbd>zero_bounce_radiance()</kbd> + <kbd>at_least_one_bounce_radiation()</kbd>.
+      This change accumulates both the “direct” and “indirect” lighting of a given scene to allow for global illumination.
+    </p>
+
+    <p class="fs-6">
+      We simplified the way we approached direct lighting vs indirect lighting vs global illumination by noting that:
+      <ul>
+        <li>Indirect lighting sums all the light for >1 bounce</li>
+        <li>Direct lighting only considers the light from the 0th bounce and 1st bounce</li>
+        <li>Global illumination refers to the accumulation of both direct and indirect lighting. In other words, global illumination refers to the accumulation of all bounces of light!</li>
+      </ul>
+    </p>
+
+
+    <p class="fs-6">
+      The function <kbd>at_least_one_bounce_radiance()</kbd> is a recursive function that recursively accumulates light. Therefore, we had to be extra careful when thinking about the different edge/base cases to ensure that the function works as expected.
+      Specifically, it calls the <kbd>one_bounce_radiance()</kbd> function, and then recursively calls itself to estimate the higher bounces of light.
+      is recursive call works by taking one random sample of a direction based on the BSDF at the hit point, tracing a ray in that sample direction, and recursively calling itself on the new hit point if there is an intersection.
+    </p>
+
+    <p class="fs-6">
+      Some parameters/fields that we had to keep in mind include the <code>max_ray_depth</code> field (a number describing the maximum amount of bounces a ray should take) and <code>isAccumBounces</code> (a boolean indicating whether we will accumulate all light along the path or if we only want to return the light at the <code>max_ray_depth</code> bounce.
+    </p>
+
+    <h5> Base Cases </h5>
+
+    <p class="fs-6">
+      The base case of this function requires us to check if a given ray’s depth is equal to 0 or if the <code>max_ray_depth</code> attribute is set to 0. If either of these is true, we return L_out = (0, 0, 0) since there is no light to accumulate along that ray.
+      Another base case we needed to check is if the ray's depth = 1. If this is true, we are done recursing and simply return the current value of L_out.
+    </p>
+
+    <h5> Recursive Step </h5>
+
+    <p>
+      If the ray depth is > 1, we begin the recursive step by first calling <kbd>isect.bsdf->sample_f()</kbd> to get the sampled <code>w_in</code> unit vector (describing the incoming radiance direction), the <code>pdf</code> (a double describing probability density function evaluated at the direction of <code>w_in</code>) and the outputted <code>reflectance</code>. If there is an intersection, we calculate:
+      <ul>
+        <li> The recursive call to <kbd>at_least_once_bounce_radiance()</kbd> which will return the radiance for all the future ray bounces </li>
+        <li> cos_theta(w_in) </li>
+      </ul>
+    Finally, we update L_out by adding: (<code>at_least_one_bounce_radiance()</code> * the <code>reflectance</code> of the current bounce * <code>cos_theta(w_in)</code>) / <code>pdf</code>
+    </p>
+
+
+    <p class="fs-6 fw-medium">
+      Show some images rendered with global (direct and indirect) illumination. Use 1024 samples per pixel.
+    </p>
+
+    <p>
+      Using global illumination (<code>zero_bounce_radiance()</code> + <code>at_least_one_bounce_radiance()</code>), we render the following images with 1024 samples per pixel.
+    </p>
+
+    <div class="container grid-container">
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_global.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_global.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> (CBbunny.dae) </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+    <h5> Direct and Indirect Illumination </h5>
+
+    <p class="fs-6">
+      From Part 3 of this project, we are able to generate the direct illumination examples since it only uses illumination from bounce 0 and bounce 1.
+      However, to generate an indirect illumination rendering, we need to make sure to accumulate light for >1 bounces. To accomplish this we had to modify our <kbd>at_least_one_bounce_radiance()</kbd> function since, by default, is includes the light from the first bounce.
+      To skip over the light from the first bounce, we added a third parameter to the function which is a boolean called <code>skip_first_call</code>. Using this variable, we can now toggle if we should add one_bounce_radiance() to L_out or not.
+      This change allows us to generate indirect illumination results since setting <code>skip_first_call</code> to true will let us skip over the light from the 1st bounce. By making sure to set <code>skip_first_call</code> to false on the recursive calls lets us accumulate light for bounces >1!
+    </p>
+
+    <p class="fs-6 fw-medium">
+      Pick one scene and compare rendered views first with only direct illumination, then only indirect illumination. Use 1024 samples per pixel. (You will have to edit PathTracer::at_least_one_bounce_radiance(...) in your code to generate these views.)
+    </p>
+
+    <div class="container grid-container">
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_direct.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Only direct illumination (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_indirect.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Only indirect illumination (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="fs-6">
+      The direct lighting illumination rendering is not as appealing as the indirect lighting rendering.
+      In the direct lighting image, the surfaces of the spheres are only lit up by the spheres direct color. For the image on the right, the surfaces of the spheres contain color from the neighboring walls through indirect lighting.
+    </p>
+
+    <hr>
+    <h5> Dealing with isAccumBounces </h5>
+    <p class="fs-6">
+      By default, <code>isAccumBounces</code> is set to true which is supported by our implementation of at_least_one_bounce_radiance as the function is designed to accumulate all light along the path up to max_ray_depth.
+      However, to accommodate for the possibility when <code>isAccumBounces</code> is set of false (we want to only return the light at the <code>max_ray_depth</code> bounce), we made the following changes:
+      <ol>
+        <li> Additional Base Case: In the case that isAccumBounces is false, one_bounce_radiance() is only added to L_out if the ray's depth is equal to one. When the ray's depth is equal to one, we know that the ray is on its last bounce; therefore, we will update L_out with the light at the last bounce. </li>
+        <li> Recursive Step Change: In the case that isAccumBounces is false, we directly set L_out at each recursive step instead of accumulating L_out. This ensures that we aren't including the light from the premature bounces in our final calculation of L_out which is supposed to be the light at only the max_ray_depth bounce. </li>
+      </ol>
+    </p>
+    <p class="fs-6 fw-medium">
+      For CBbunny.dae, render the mth bounce of light with <code>max_ray_depth</code> set to 0, 1, 2, 3, 4, and 5 (the -m flag), and <code>isAccumBounces</code> = false. Use 1024 samples per pixel.
+    </p>
+
+    <div class="container grid-container">
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_not_accum_depth_0.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 0th bounce of light; <code>isAccumBounces</code> = false </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_not_accum_depth_1.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 1st bounce of light; <code>isAccumBounces</code> = false </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_not_accum_depth_2.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 2nd bounce of light; <code>isAccumBounces</code> = false </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_not_accum_depth_3.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 3rd bounce of light; <code>isAccumBounces</code> = false </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_not_accum_depth_4.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 4th bounce of light; <code>isAccumBounces</code> = false </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_not_accum_depth_5.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 5th bounce of light; <code>isAccumBounces</code> = false </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="fs-6 fw-medium">
+      Explain what you see for the 2nd and 3rd bounce of light, and how it contributes to the quality of the rendered image compared to rasterization.
+
+    </p>
+
+    <p class="fs-6">
+      Between the 2nd and 3rd bounce of light, the render becomes much darker which is the expected behavior since the light disperses outside of the scene.
+      In the 2nd bounce of light image, we see much more light on the bunny's surface and on the walls/ceiling of the scene. After the second bounce, much of the light rays in the scene have been absorbed by the bunny/walls/ceiling.
+      <br> <br>
+      This lighting effect is what allows us to generate such high quality renderings. Enabling global illumination with multiple bounces of light, our rendered scenes contain diffused colors that shine on the surfaces of the bunny. Overall, compared to rasterization, global illumination allows for more complex light/scene interaction.
+      On the other hand, rasterization does not allow us to manipulate how light interacts with a scene. Rather, rasterization is solely used to prevent anti-aliasing and reducing noise but nothing beyond that.
+    </p>
+
+    <hr>
+    <h5> Global Illumination with Russian Roulette </h5>
+    <p class="fs-6">
+      Russian Roulette provides us an unbiased method of random ray termination. The reason behind adding random termination is that our program will become computationally infeasible if we choose a very large <code>max_ray_depth</code> value.
+      Therefore, Russian Roulette lets our atleast_one_bounce_radiance() function choose at each iteration whether or not to terminate the recursion.
+    </p>
+
+    <p class="fs-6">
+      To implement this feature, we define our termination probability to be a value between 0.3 and 0.4 (<code>termination_prob = 0.35</code>). We also defined a boolean <code>use_russian_roulette</code> in our code!
+      If <code>use_russian_roulette</code> is true, we use the <code>coin_flip</code> function to determine if we continue the recursion or not. <code>coin_flip</code> takes in a probability p and returns true with probability p. Therefore, we only perform the recursive step if <code>coin_flip(1 - termination_prob)</code> is true!
+    </p>
+
+    <p class="fs-6 fw-medium">
+      For CBbunny.dae, compare rendered views with <code>max_ray_depth</code> set to 0, 1, 2, 3, 4, and 5 (the -m flag). Use 1024 samples per pixel.
+    </p>
+    <p class="fs-6 fw-medium">
+      For CBbunny.dae, output the Russian Roulette rendering with <code>max_ray_depth</code> set to 0, 1, 2, 3, 4, and 100(the -m flag). Use 1024 samples per pixel.
+    </p>
+
+    <div class="container grid-container">
+
+      <div class="row">
+        <p class="col-6 fw-medium text-center"> <u>Without Russian Roulette</u> </p>
+        <p class="col-6 fw-medium text-center"> <u>With Russian Roulette</u> </p>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_depth_0.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> W/O Russian Roulette - <code>max_ray_depth</code> = 0 </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_rr_depth_0.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Russian Roulette - <code>max_ray_depth</code> = 0 </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_depth_1.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> W/O Russian Roulette - <code>max_ray_depth</code> = 1 </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_rr_depth_1.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Russian Roulette - <code>max_ray_depth</code> = 1 </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_depth_2.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> W/O Russian Roulette - <code>max_ray_depth</code> = 2 </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_rr_depth_2.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Russian Roulette - <code>max_ray_depth</code> = 2 </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_depth_3.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> W/O Russian Roulette - <code>max_ray_depth</code> = 3 </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_rr_depth_3.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Russian Roulette - <code>max_ray_depth</code> = 3 </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_depth_4.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> W/O Russian Roulette - <code>max_ray_depth</code> = 4 </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_rr_depth_4.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Russian Roulette - <code>max_ray_depth</code> = 4 </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_depth_5.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> W/O Russian Roulette - <code>max_ray_depth</code> = 5 </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_rr_depth_100.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Russian Roulette - <code>max_ray_depth</code> = 100 </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="fs-6">
+      Here, we compare the differences between scenes rendered without russian roulette (left column) and those rendered with russian roulette (right column). As expected, with both implementations, we see that the scenes become more illuminated as <code>max_ray_depth</code> increases.
+      Additionally, the images between both columns (comparing the two images with and without russian roulette for the same value of <code>max_ray_depth</code>) are almost identical which shows how early termination is in fact a benefit as it avoids extra computation while still maintaining the desired rendering outcome.
+      Something interesting to note is that there is hardly any difference the russian roulette renderings of <code>max_ray_depth</code> = 4 and <code>max_ray_depth</code> = 100. Because of random termination at every recursive step, it is very likely that the max_ray_depth = 100 image did not contains light rays that bounced 100 times.
+      In reality, the number of bounces for each of the rays in these two images are likely very similar.
+    </p>
+
+    <p class="fs-6 fw-medium">
+      Pick one scene and compare rendered views with various sample-per-pixel rates, including at least 1, 2, 4, 8, 16, 64, and 1024. Use 4 light rays.
+    </p>
+
+    <div class="container grid-container">
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_1_spp.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 1 sample per pixel (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_2_spp.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 2 sample per pixel (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_4_spp.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 4 sample per pixel (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_8_spp.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 8 sample per pixel (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_16_spp.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 16 sample per pixel (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_64_spp.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 64 sample per pixel (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_1024_spp.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> 1024 sample per pixel (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="fs-6">
+      As we increase the pixel sampling rate, the rendering of the bunny appears more clear and with less noise! When the pixel sampling rate is 1, the image is extremely grainy and filled with noise. However, increasing the samples per pixel helps reduce the noise! Therefore, we want to have a high pixel sampling rate to generate high quality renders.
+    </p>
+
+  </div>
+
+  <div class="section_2 py-4">
+
+    <h1 class="display-6"> Part 5: Adaptive Sampling (20 Points) </h1>
+
+    <p class="fs-6 fw-medium">
+      Explain adaptive sampling. Walk through your implementation of the adaptive sampling.
+    </p>
+
+    <p class="fs-6">
+      Adaptive Sampling is a strategy aimed at noise reduction in images by concentrating the number of samples per pixel in areas that are more difficult to render which helps reduce the number of samples for pixels that converge quickly.
+      The motivation behind this method is that some pixels converge faster with low sampling rates while others require a larger sampling rate to effectively get rid of noise.
+      For Adaptive Sampling, we had to modify the raytrace_pixel function that we previously implemented in part 1. The modifications we made are as follows:
+    </p>
+
+    <p class="fs-6">
+      <ol>
+        <li> We first initialize two variables, s0, and s1, to maintain a cumulative sum of the illuminance and the squared illuminance. </li>
+        <li> We also initialize num_samples = ns_aa </li>
+        <li>
+          In each iteration of the loop, we check if the number of generated samples is divisible by <code>samplesPerBatch</code>. The reason for this is that we want to avoid checking for convergence at each new sample since the extra computation can cause our program to slow down. Therefore, we only check for pixel convergence after every <code>samplesPerBatch</code> iterations.
+          <ul>
+            <li> When this condition is met, we calculate a confidence interval of a pixel’s convergence using the formula: $$ I = 1.96 * (\sigma/\sqrt{n})$$. We then compare this value against the product of <code>maxTolerance</code> and <code>μ</code>
+              If achieving the desired tolerance, we assume that the pixel has converged which allows us to break out of the sampling loop and log the current sample count in the <code>sample_rate</code> buffer.
+            </li>
+            <li>
+              Otherwise, we generate the sampled radiance from <code>est_radiance_global_illumination(r)</code> and accumulate (<code>sampled_radiance.illum()</code>) to <code>s1</code> and (<code>sampled_radiance.illum() ** 2</code>) to <code>s2</code>.
+
+            </li>
+          </ul>
+        </li>
+      </ol>
+    </p>
+
+<!--    <div class="w-80 text-center mx-auto">-->
+<!--      <img src="./images/task5_edge_split.jpg" class="img-fluid" alt="Responsive image">-->
+<!--    </div>-->
+
+    <p class="fs-6 fw-medium">
+      Pick two scenes and render them with at least 2048 samples per pixel. Show a good sampling rate image with clearly visible differences in sampling rate over various regions and pixels. Include both your sample rate image, which shows your how your adaptive sampling changes depending on which part of the image you are rendering, and your noise-free rendered result. Use 1 sample per light and at least 5 for max ray depth.
+    </p>
+
+    <div class="container grid-container">
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_as.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Rendered image (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/spheres_as_rate.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Sample rate image (CBspheres_lambertian.dae) </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Rendered image (CBbunny.dae) </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+          <div class="card">
+            <img src="images/bunny_rate.png" class="card-img-top" alt="Image 1">
+            <div class="card-body text-center">
+              <p class="card-text"> Sample rate image (CBbunny.dae) </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+</body>
 </html>
+
