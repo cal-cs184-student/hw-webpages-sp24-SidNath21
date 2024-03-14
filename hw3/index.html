@@ -109,6 +109,24 @@
     </p>
 
     <p class="fs-6 fw-medium">
+      Sphere Intersection
+    </p>
+
+    <p>
+      For ray-sphere intersection, we start by setting the equation of a ray \( r(t) = O + tD \) to the equation of the sphere which is given by \( (p - c)^2 - R^2 = 0\).
+      As presented in lecture, setting these two equations equal results in the following:
+    </p>
+
+    <div class="w-50 text-center mx-auto">
+      <img src="./images/ray_sphere_algorithm.jpeg" class="img-fluid" alt="Responsive image">
+    </div>
+
+    <p>
+      After calculating the values for \( a, b, c\), we first start by calculating the determinant of the quadratic (\( b^2 - 4ac\)). If this value is less than 0, we know that there is no valid intersection. Otherwise, we go on to compute the two values of t because this is a quadratic with 2 roots!
+      Additionally, we need to check if the intersection occurs at a t that lies within min_t and max_t of the input ray. Finally, since the ray can intersect the sphere at two points, we made sure to return the closer intersection that still obeys the need for t to be between min_t and max_t.
+    </p>
+
+    <p class="fs-6 fw-medium">
       Show images with normal shading for a few small .dae files.
     </p>
 
@@ -325,10 +343,10 @@
           Then, we immediately check if a new ray going from the hit_p in the sampled direction intersects a light source.
           <ul>
             <li> If there is no intersection, we simply skip over the sample since it doesn’t contribute any direct light to the point of interest. </li>
-            <li> However, if there is an intersection, we weigh the light emission by the bsdf function and the cosine of the vector /( w_i \).  </li>
+            <li> However, if there is an intersection, we weigh the light emission by the bsdf function and the cosine of the vector w_i.  </li>
           </ul>
         </li>
-        <li> Additionally, we make sure to normalize the light with the pdf - the value of the probability density function evaluated at the /(w_i/) direction. </li>
+        <li> Additionally, we make sure to normalize the light with the pdf - the value of the probability density function evaluated at the w_i direction. </li>
 
       </ol>
 
@@ -346,7 +364,7 @@
             <li> However, if the light source isn’t a point light source, we use <code>ns_area_light</code> samples instead of one! </li>
           </ul>
         </li>
-        <li> Now that we know how many samples to take (either 1 or <code>ns_area_light</code>), we call <kbd>SceneLight::sample_L</kbd> to get the unit /( w_i /) vector (in world-space) representing the sampled direction between p and the light source. </li>
+        <li> Now that we know how many samples to take (either 1 or <code>ns_area_light</code>), we call <kbd>SceneLight::sample_L</kbd> to get the unit w_i vector representing the sampled direction between p and the light source. </li>
         <li> The following logic is similar to the implementation of uniform hemisphere sampling as we now cast a ray in this direction and check to see if there is an intersection.</li>
       </ol>
 
