@@ -1,7 +1,1194 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 4 index.html here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <style>
+
+    </style>
+    <title>CS 184/284A Cloth Simulation</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+</head>
+
+
+<body>
+
+<div class="main-description mt-3">
+
+    <h1 class="display-3 text-center fw-medium"> Homework 4: Cloth Simulator  </h1>
+    <p class="lead text-center fs-3"> CS 184/284A: Computer Graphics and Imaging, Spring 2024 </p>
+    <p class="text-center fs-2"> Siddharth Nath </p>
+    <div style="width: 80%;" class="mx-auto">
+        <!--    <div class="d-grid gap-2 d-md-flex justify-content-md-center">-->
+        <!--      <button class="btn btn-outline-primary me-md-2" type="button" onClick="document.getElementById('image-quilting').scrollIntoView();""> Image Quilting </button>-->
+        <!--      <button class="btn btn-outline-primary" type="button" onClick="document.getElementById('neural-style-transfer').scrollIntoView();"> Neural Algorithm of Artistic Style </button>-->
+        <!--    </div>-->
+        <hr />
+    </div>
+
+</div>
+
+<br><br>
+
+<div class="project-body mx-auto" style="width: 80%;">
+    <div class="project-overview">
+        <h1 class="display-5"> Project Overview </h1>
+        <p class="fs-6">
+            In this project, I implemented a real-time cloth simulation by modeling a system consisting of point masses and springs.
+            I started by learning about the different internal spring forces and building a data structure to support the large mesh of point masses connected by springs.
+            Additionally, I enjoyed modeling the physical equations of motion along with Verlet integration to enable realistic cloth physics and movement!
+        <p class="fs-6">
+            My favorite part of the project was observing how the cloth behaves when colliding with other objects including a sphere and a plane.
+            This was also the most challenging part of the project, since I had to carefully consider different edge-cases such as cloth self-collision which made the cloth clip through itself and behave unnaturally.
+            <br> </br>
+            Overall, this project gave me a valuable insight as to how to simulate materials with a simple mesh of point masses and springs. Applying the Shaders from Part 5 was also a fun and exciting way to learn about Shader programs work!
+        </p>
+
+    </div>
+
+    <div class="section_I py-4">
+
+        <h1 class="display-6"> Part 1: Masses and springs </h1>
+
+        <p class="fs-6">
+            Modeling cloth requires building a mesh consisting of point masses and springs.
+            To build a grid of masses and springs, I started by creating an evenly spaced grid of masses with dimensions <code> num_width_points </code> by <code> num_height_points</code>.
+            To ensure that the point masses are spaced evenly, I first calculated <code> dw = width / (num_width_points - 1) </code> and <code> dh = height / (num_height_points - 1) </code> which represents the distance between neighboring point masses.
+            Then, I iterated through a 2D for-loop and calculated the position for every point mass.
+            <br> <br>
+            While doing this, I had to account for the orientation of the cloth since the cloth's orientation can either be horizontal or vertical.
+            If the cloth's orientation was set to Horizontal, I set the y-coordinate for all point masses to 1 while varying the position for the xz plane.
+            However, if the cloth's orientation was set to Vertical, I set the z-coordinate to be a random value between \( -\frac{1}{1000} \) and \( \frac{1}{1000} \) while varying the positions for the xy plane.
+        </p>
+
+        <p class="fs-6">
+            After creating the grid of point masses, I had to create springs to apply the structural, shearing, and bending constraints between the point masses:
+            <ul>
+                <li>Structural constraints exist between a point mass and the point mass to its left as well as the point mass above it.</li>
+                <li>Shearing constraints exist between a point mass and the point mass to its diagonal upper left as well as the point mass to its diagonal upper right.</li>
+                <li>Bending constraints exist between a point mass and the point mass two away to its left as well as the point mass two above it.</li>
+            </ul>
+            To do this, I simply iterated through the grid of point masses and created the springs with the appropriate constraint between neighboring point masses.
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Take some screenshots of <i>scene/pinned2.json</i> from a viewing angle where you can clearly see the cloth wireframe
+            to show the structure of your point masses and springs.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part1_pinned2_zoom1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> View 1 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part1_pinned2_zoom2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> View 2 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part1_pinned2_all_constraints.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> View 3 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="fs-6">
+            To illustrate the different Spring constraints, take a look at the images below:
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show us what the wireframe looks like (1) without any shearing constraints,
+            (2) with only shearing constraints, and (3) with all constraints.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part1_pinned2_no_shearing.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> No shearing constraints </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part1_pinned2_only_shearing.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Only shearing constraint </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part1_pinned2_all_constraints.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> All constraints </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="section_I py-4">
+
+        <h1 class="display-6"> Part 2: Simulation via numerical integration </h1>
+
+        <h5> Compute total force acting on each point mass </h5>
+        <p class="fs-6">
+            To integrate the physical equations of motion in order to apply the forces on the cloth's point masses, I first had to compute the total force acting on each point mass.
+            The first force I had to consider was the external force of gravity that is being applied on all point masses uniformly. This involved using the given <code>external_accelerations</code> and <code>mass</code> values to calculate \( F = m * a \).
+            The other forces I had to consider were the spring correction forces which I computed using Hooke's Law: \( F_s = k_s * (||p_a - p_b|| - l) \).
+            Since the bending constraint of springs is weaker than the other two, I multiplied \( k_s \) by 0.2 if the spring had a bending constraint to keep the calculation consistent.
+        </p>
+        <h5> Verlet integration to compute new point mass positions </h5>
+        <p class="fs-6">
+            Now that I had the force acting on each point mass for a given time step, I performed numerical integration via Verlet integration to compute each point mass's change in position.
+            For each point mass, I first ensured that the point mass isn't pinned because pinned point masses shouldn't move!. Then, I calculated the updated position for the point mass using this equation:
+            $$ x_{t+dt} = x_t + (1 - d) * (x_t - x_{t+dt}) + a_t * dt^2 $$
+            Here, \( d \) represents the damping coefficient and \( a_t \) represents the point mass acceleration for time step t which was calculated using \( a = F/m \).
+            Then, for each point mass I updated its <code>position</code> attribute to be the new calculated position while updating its <code>last_position</code> to be the previous position.
+        </p>
+        <h5> Constrain position updates </h5>
+        <p class="fs-6">
+            One implementation detail that I added was a constraint meant to keep springs from being unreasonably deformed during each time step.
+            I iterated through each spring and correcting the two point masses' positions such that the spring's length is at most 10% greater than its rest_length at the end of any time step.
+            For each spring, I calculated the spring length as the distance between its two point masses, and checked if <code>spring_length > 1.1 * spring.rest.length</code>.
+            If this was true, I appropriately corrected the positions of the point masses to ensure that the constraint isn't being violated.
+        </p>
+
+        <hr>
+
+        <p> The appearance and behavior of the cloth are heavily influenced by its parameters including the spring constant \( k_s \), the density, and the damping coefficient. </p>
+
+        <h5> Spring Constant </h5>
+        <p class="fs-6 fw-medium">
+            Describe the effects of changing the spring constant <code>ks</code>; how does the cloth behave from start to rest with a very low <code>ks</code>?
+            A high <code>ks</code>?
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned2_ks_100.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> \(k_s\) = 100 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned2_ks_1000.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> \(k_s\) = 1000 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned2_default.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> \(k_s\) = 5000 (default) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned2_ks_10000.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> \(k_s\) = 10000 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="fs-6">
+            From the results above, increasing the spring constant while setting all other parameters to their default state <code>density = 15 g/cm^2</code> and <code>damping = 0.2%</code> increases the stiffness of the springs which in turn makes the cloth more rigid and less prone to bending.
+            Looking at the creases in the images above is consistent with this explanation because the image displaying the cloth with \( k_s \) = 100 has many creases while the image where \( k_s \) = 10000 has very few creases.
+            When \( k_s \) decreases, the cloth is more loose and flexible which is why the cloth's movement is not as stable/predictable as cloths with large values of \( k_s \).
+        </p>
+
+
+        <h5> Density </h5>
+
+        <p> The images below depict the cloth with density values of <code>1, 5, 15, and 50 g / cm^2</code> while setting the other parameters to default. </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned2_density_1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> density = \( \frac{1 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned2_density_5.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> density = \( \frac{5 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned2_default.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> density = \( \frac{15 g}{cm^2} \) (default) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned2_density_50.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> density = \( \frac{50 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="fs-6">
+            Here, we can see that density behaves inversely to the spring constant \( k_s \). Increasing density seems to have the same behavior as decreasing \( k_s \) since doing so makes the cloth less rigid with more creases.
+            The density = \( \frac{50 g}{cm^2} \) cloth shows heavy creasing and a more loose/flexible material compared to the rigid nature of the density = \( \frac{1 g}{cm^2} \) cloth.
+            The reason for this behavior is that having a more dense object means that the object has more mass (since the volume of the cloth is constant). As a result, there a larger accumulation of forces for each point mass including the force of gravity responsible for pulling the cloth downwards.
+            This corresponds to more creases appearing on the cloth as its shape gets more deformed by the larger forces.
+        </p>
+
+        <h5> Damping </h5>
+
+        <p> The images/videos below depict the cloth with damping values of <code>0%, 0.2%, 0.5%, and 1% </code> while setting the other parameters to default. </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <video controls="controls" width="100%" name="Video Name">
+                            <source src="images/part2_pinned2_density_0.mov">
+                        </video>
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 0%  </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_damping_0_moving1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 0%, screenshot 1 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_damping_0_moving2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 0%, screenshot 2 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <video controls="controls" width="100%" name="Video Name">
+                            <source src="images/part2_pinned2_density_0.2.mov">
+                        </video>
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 0.2%  </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_damping_0.2_moving1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 0.2%, screenshot 1 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_damping_0.2_moving2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 0.2%, screenshot 2 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <video controls="controls" width="100%" name="Video Name">
+                            <source src="images/part2_pinned2_density_0.5.mov">
+                        </video>
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 0.5%  </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_damping_0.5_moving1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 0.5%, screenshot 1 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_damping_0.5_moving2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 0.5%, screenshot 2 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <video controls="controls" width="100%" name="Video Name">
+                            <source src="images/part2_pinned2_density_1.mov">
+                        </video>
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 1%  </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_damping_1_moving1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 1%, screenshot 1 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_damping_1_moving2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> damping = 1%, screenshot 2 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!--        <video controls="controls" width="800" height="600" name="Video Name">-->
+<!--            <source src="images/part2_pinned2_density_1.mov">-->
+<!--        </video>-->
+
+        <p>
+            When damping is set to 0%, the cloth's movement is very unstable as it swings back and forth violently. This makes it take much longer for the cloth to reach its resting position.
+            On the other hand, when damping is set to 1% the cloth lowers itself in a controlled manner and stops at the rest position quickly without oscillating back and forth.
+            This behavior is caused by the implementation of Verlet Integration since the damping term \( (1 - d) \) is multiplied by the velocity term in the Verlet Integration equation.
+            Therefore, when \( d = 0% \), the velocity term is multiplied by (1 - 0) which means that there is no loss of energy in our numerical integration model. Since there is no external force that dampens the energy of the cloth, the cloth continues to swing back and forth.
+            Increasing \( d \) means that the energy of the cloth dissipates which leads the cloth to the resting state.
+        </p>
+
+        <h5> Final Resting State </h5>
+
+        <p> The screenshots below show the mesh and the shaded cloth of <code>scene/pinned4.json</code> in its final resting state:</p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned4_wireframe.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Wireframe Cloth (default) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part2_pinned4_normal.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Shaded Cloth (default) </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+    <div class="section_2 py-4">
+
+        <h1 class="display-6"> Part 3: Handling collisions with other objects </h1>
+
+        <p class="fs-6">
+            To handle collisions with other objects, I had to implement the <code>collide()</code> method in <kbd>sphere.cpp</kbd> and <kbd>plane.cpp</kbd>
+            This method determines whether a given point mass is inside either the sphere or plane which is used to implement the logic for collisions.
+        </p>
+
+        <h5> Sphere Collision </h5>
+
+        <p class="fs-6">
+            The <kbd>Sphere::collide</kbd> method takes as input a point mass (<code>PointMass pm</code>) and updates its position if the point mass intersects with or is inside the sphere.
+            If there is an intersection or if the point mass is within the sphere, I update the point mass's position to be just above the sphere's surface.
+            <ol>
+                <li> First, I check to see if <code>pm</code> is intersecting the sphere or is inside the sphere by comparing the distance between the point mass's position and the sphere's origin to the sphere's radius.</li>
+                <li>
+                    If <code>distance_from_origin <= radius</code>, I calculate the tangent point to be the position where the point mass should have intersected the sphere.
+                    I do this by computing the unit direction vector pointing from the origin towards the point mass and defining <code>tangent_point = origin + (pm.position - origin).unit() * radius</code>
+                </li>
+                <li> Given the tangent point, I calculate the correction vector which represents the vector that is needed to map the point mass to the tangent point.
+                    Using the correction_vector, I update the position of the point mass while also accounting for friction by scaling the final position down by <code>(1 - friction)</code>.
+                </li>
+            </ol>
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show us screenshots of your shaded cloth from scene/sphere.json in its final resting state on the sphere using the default ks = 5000 as well as with ks = 500 and ks = 50000. Describe the differences in the results.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part3_sphere_ks_500.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> \(k_s\) = 500</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part3_sphere_ks_5000.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> \(k_s\) = 5000 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part3_sphere_ks_50000.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> \(k_s\) = 50000 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>
+            From the results above, increasing \( k_s \) makes the cloth more rigid and less flexible. This can be observed by looking at the decrease of creasing in the scene where \( k_s \) = 50000 compared to the many creases in the scene where \( k_s \) = 500.
+            Decreasing \( k_s \) allows the cloth to fold around the sphere as it drapes nicely over the sphere. With a high value, the cloth is awkwardly positioned on top of the sphere and doesn't naturally drape over the sphere since the bottom portion of the sphere is still visible!
+        </p>
+
+        <h5> Plane Collision</h5>
+
+        <p>
+            Implementing collision with a plane was more tricky that the sphere but involved many of the same steps:
+            <ol>
+                <li>
+                    To determine if a point mass intersects/crosses a plane, I check to see if the point mass moves from one side of the plane to the other side in the last time step. By calculating the dot product between the point mass's position (for the previous time step position and current time step position) and the normal vector, I can check to see if the point mass crosses over the plane:
+                </li>
+                <li>
+                    If the dot products have opposite signs (i.e one is positive and the other is negative), I proceed by using the ray-plane intersection formula that was presented in lecture.
+                    To do this I calculate the direction vector pointing from the point mass's current position towards its last position. Then I compute <code> t = dot(point - pm.position, normal) / dot(direction_vector, normal) </code>
+                </li>
+                <li>
+                    Given <code>t</code>, I calculate the tangent point to be equal to <code>pm.position + (t * direction_vector) </code>. This tangent point represents where the point mass should have intersected the plane, if it had travelled in a straight line from its position towards the plane.
+                </li>
+                <li>
+                    With the tangent point, I calculated the correction vector needed to be applied to the point mass's last_position in order to reach a point slightly above the tangent point on the side of the plane that the point mass originated from.
+                    The purpose of the <code>SURFACE_OFFSET</code> variable is to ensure that the point mass lies strictly above the tangent point so that there are no clipping errors that can cause unintended behavior.
+                    Finally, the updated position of the point mass is calculated using the correction vector.
+                </li>
+            </ol>
+        </p>
+
+        <hr>
+
+        <p>
+            After implementing both Plane collision and sphere collision, I updated <kbd>Cloth::simulate</kbd> by checking for collisions between every Point Mass and every possible CollisionObject (Plane and Sphere)
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show us a screenshot of your shaded cloth lying peacefully at rest on the plane.
+            If you haven't by now, feel free to express your colorful creativity with the cloth!
+            (You will need to complete the shaders portion first to show custom colors.)
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part3_plane.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Point Mass - Plane Intersection</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="section_2 py-4">
+
+        <h1 class="display-6"> Part 4: Handling self-collisions </h1>
+
+        <p>
+            Although the sphere and plane intersection work as expected, there are issues when the cloth intersects with itself as it causes the cloth to clip through itself and behave unnaturally.
+            To fix this problem, I had to handle cloth self-collision which works by computing the distances between pairs of point masses and adjusting their positions if they are too close to each other which is defined by a threshold <code>thickness</code> variable.
+            <br> <br>
+            The naive implementation involved iterating through all \( n^2 \) pairs of point masses and resolving the possibility of self-collision with each pair. However, this method is inefficient especially when dealing with large meshes that contain many point masses.
+            An alternative is using a hash table that takes advantage of spacial hashing to efficiently link point masses that share the same 3D volume. As a result, I no longer have to loop through all \( n^2 \) pairs of point masses!
+        </p>
+
+        <p>
+            The function <kbd>Cloth::hash_position</kbd> hashes a 3D position into a unique float that represents its associated 3D box volume. This is done by partitioning the 3D space into 3D boxes of dimensions \( w * h * t \)
+            where \( w \) = <code>3 * width / num_width_points</code>, \( h \) = <code>3 * height / num_height_points </code>, and \( t \) = <code>max(w, h)</code>. Using this values, I take the xyz position and truncate its coordinates to the closest 3D box using floor division across each axis.
+            Finally, I compute and return a unique hash that corresponds to those 3D coordinates: <code>idx3 * (num_height_points * num_width_points) + idx2 * (num_width_points) + idx1</code>
+        </p>
+
+        <p>
+            The next step was implementing <kbd>Cloth::build_spatial_map</kbd> which iterates through all the point masses and populated a hash table using the <kbd>Cloth::hash_position</kbd> function.
+        </p>
+        <p>
+            Finally, <kbd>Cloth::self_collide</kbd> takes in a point mass and retrieves all the point masses that share the same 3D box from the spacial hash map. For each candidate point mass, I calculate the distance between that point mass and the input point mass to check if they are within <code> 2 * thickness </code> distance apart.
+            If so, I compute a correction vector to push back the position of the input point mass so that it is no longer within the threshold distance. The final correction vector is calculated as the average of all the pair-wise correction vectors before it gets applied to the inputted point mass and changes its position.
+        </p>
+
+        <p> With these three functions implemented, I went back to update <kbd>Cloth::simulate</kbd>
+            by first calling the <code>build_spatial_map</code> function before iterating through all point_masses and calling self_collide on each one to prevent self-collision from happening.
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show us at least 3 screenshots that document how your cloth falls and folds on itself,
+            starting with an early, initial self-collision
+            and ending with the cloth at a more restful state (even if it is still slightly bouncy on the ground).
+        </p>
+
+        <h5>Default Self-Collision</h5>
+        <p> The default parameters are: density = \( \frac{15 g}{cm^2} \) and \( k_s \) = 5000 </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_default_1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 1 - default </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_default_2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 2 - default </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_default_3.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 3 - default </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_default_5.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 4 - default </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <p class="fs-6 fw-medium">
+            Vary the <code>density</code> as well as <code>ks</code>
+            and describe with words and screenshots how they affect the behavior of the cloth as it falls on itself.
+        </p>
+
+        <h5> Density = \( \frac{1 g}{cm^2} \) </h5>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_density_1_1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 1 - <code>density</code> = \( \frac{1 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_density_1_2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 2 - <code>density</code> = \( \frac{1 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_density_1_3.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 3 - <code>density</code> = \( \frac{1 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_density_1_4.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 4 - <code>density</code> = \( \frac{1 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5> Density = \( \frac{50 g}{cm^2} \) </h5>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_density_50_1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 1 - <code>density</code> = \( \frac{50 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_density_50_2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 2 - <code>density</code> = \( \frac{50 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_density_50_3.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 3 - <code>density</code> = \( \frac{50 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_density_50_4.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 4 - <code>density</code> = \( \frac{50 g}{cm^2} \) </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>
+            With a smaller density value \( \frac{1 g}{cm^2} \), the cloth has a smaller amount of self-collisions which can be seen by the fewer number of ripples in the screenshots above.
+            With a lower density, there is less mass which in turn leads to fewer forces acting on the cloth.
+            However, when increasing the density to \( \frac{50 g}{cm^2} \), the cloth has many more self-collisions which is evident by the numerous high-frequency ripples in the cloth.
+            The behavior of the high density cloth is more chaotic and less ideal as the increase in self-collisions requires more time for the cloth to reach its true resting position. At its resting state, the cloth contains many perturbations and deformations compared to the low density cloth which nicely folds over itself.
+            Once again, high density corresponds to more forces being applied to the cloth and overall more self-collisions.
+        </p>
+
+        <hr>
+
+        <h5> \( k_s \) = 50 </h5>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_ks_50_1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 1 - \( k_s \) = 50 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_ks_50_2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 2 - \( k_s \) = 50 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_ks_50_3.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 3 - \( k_s \) = 50 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_ks_50_4.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 4 - \( k_s \) = 50 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5> \( k_s \) = 50000 </h5>
+
+        <div class="container grid-container">
+
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_ks_50000_1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 1 - \( k_s \) = 50000 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_ks_50000_2.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 2 - \( k_s \) = 50000 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_ks_50000_3.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 3 - \( k_s \) = 50000 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part4_ks_50000_4.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Self collision 4 - \( k_s \) = 50000 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>
+            \( k_s \) behaves inversely to density as noted in Part 2 of this project writeup. As a result, the cloth with a small \( k_s \) (50) has a similar behavior to the cloth with a high density (\( \frac{50 g}{cm^2} \)).
+            With a smaller \( k_s \), the cloth has many high-frequency self-collisions compared to the few and more spaced out self collisions visible in the cloth where \( k_s \) = 50000. Additionally, the resting state of the small \( k_s \) cloth is more chaotic and has more deformations compared to the relatively stable resting state achieved by \( k_s \) = 50000 in which the cloth neatly folds over itself.
+        </p>
+
+    </div>
+
+    <div class="section_2 py-4">
+
+        <h1 class="display-6"> Part 5: Cloth Sim </h1>
+
+        <p class="fs-6 fw-medium">
+            Explain in your own words what is a shader program and how vertex and fragment shaders work together to create lighting and material effects.
+        </p>
+
+        <p class="fs-6">
+            A shader program is a specialized program that runs on a computer's GPU rather than its CPU. This distinction is important for real-time graphics rendering in applications like video games where high frame rates are needed. Shaders are used to execute different parts of the graphics pipeline and consists of two basic OpenGL shader types: Vertex shaders and Fragment shaders
+        </p>
+        <p class="fs-6">
+            Vertex shaders and fragment shaders are the two core types of shaders that work together within the graphics pipeline for rendering scenes.
+            The vertex shader operates on each vertex of a polygon and it applies transformations the vertex's geometric properties such as its position and normal vector. It is important to note that Vertex shaders use barycentric interpolation to interpolate the different vertex values across the surface of the polygon.
+            The vertex shaders are also responsible for writing the final vertex position to the <code>gl_Position</code> which, along with normal vectors and uv coordinates that are stored in other variables, are passed on to the fragment shaders.
+        </p>
+        <p>
+            After the geometry defined by the vertices is rasterized into fragments, the fragment shader takes over and calculates the final color of each fragment/pixel by using the interpolated data provided by the vertex shader.
+            Both the vertex shaders and fragment shaders are needed to model lighting, material effects, and different textures to get a well rendered output!
+        </p>
+        <p class="fs-6">
+
+        </p>
+
+        <hr>
+
+
+        <h5> Blinn-Phong </h5>
+
+        <p class="fs-6 fw-medium">
+            Explain the Blinn-Phong shading model in your own words.
+            Show a screenshot of your Blinn-Phong shader outputting only the ambient component, a screen shot only outputting the diffuse component, a screen shot only outputting the specular component, and one using the entire Blinn-Phong model.
+        </p>
+
+        <p class="fs-6">
+            The Blinn-Phong shading model is a local shading model known for being simple and efficient. Unlike other more complex shading models, the Blinn-Phong shading model is not based on physics. Rather, it is based on perceptual observations and consists of Ambient, Diffuse, and Specular components:
+            <ul>
+                <li>Ambient Shading does not depend on the light source, viewing direction, or anything else as it simply models the low-level indirect light that uniformly illuminates objects.</li>
+                <li>Diffuse Shading refers to light that is scattered uniformly in all direction. This shading depends on the angle between the normal vector and the viewing direction which gets accounted for with Lambert's cosine law.</li>
+                <li>Specular Shading is shading that depends on the view direction and simulates the bright near-mirror reflections found on shiny surfaces.  </li>
+            </ul>
+        </p>
+
+        <p>
+            To illustrate the different components of the Blinn-Phong shading model, take a look at the screenshots below and the specified parameters.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_ambient_0.5.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Ambient component : \( k_a \) = 0.5 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_ambient_1.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Ambient component : \( k_a \) = 1 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_diffuse.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Diffuse component: \( k_d \) = 1 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_specular_0.15_15.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Specular component: \( k_s \) = 0.15, p = 15 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_specular_1_15.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Specular component: \( k_s \) = 1, p = 15 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_specular_1_100.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Specular component: \( k_s \) = 1, p = 100 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-8 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_blinn_phong.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Blinn Phong: \( k_a \) = 1, \( k_d \) = 1, \( k_s \) = 1, p = 100 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <hr>
+
+        <h5> Texture Mapping </h5>
+
+        <p class="fs-6">
+            To complete the texture mapping shader in <kbd>Texture.frag</kbd>, I called <code>texture(u_texture_2, v_uv)</code> and passed in the provided texture map <code>u_texture_2 </code>and the texture space coordinate <code>v_uv</code>.
+        </p>
+
+        <p class="fs-6 fw-medium">
+            Show a screenshot of your texture mapping shader using your own custom texture by modifying the textures in <code>/textures/</code>.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_texture_sphere.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Custom Texture - Sphere </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_texture_plane.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Custom Texture - Cloth </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_texture_cloth.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Custom Texture - Cloth on Sphere </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>
+            To accomplish this, I replaced the provided <code>texture_2.png</code> image with the following image I took of Vishali holding a yummy drink!
+        </p>
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/texture_4.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Custom Texture image </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5>Bump and Displacement Mapping</h5>
+
+        <p>
+            In addition to using textures for color mapping, we can encode a height map in a texture to be processed and applied by a shader program in displacement and bump mapping.
+        </p>
+
+        <p>
+            For bump mapping, I copied over my code from the Blinn-Phong shading but modified the normal vectors of objects so that the fragment shader can give the illusion of surface details (bumps) on an object.
+            To calculate the new normal vectors, it is easier to work in object space as all the normal vectors have the useful properties of having a z-coordinate of 1. To eventually convert the vectors in object space back into model space, I constructed the tangent-bitangent-normal (TBN) matrix defined as:
+            $$ TBN = [t, b, n]$$ where \( t \) is the tangent vector, \( b \) is the cross product \( b \times n \), and \( n \) is the original model-space normal vector.
+        </p>
+
+        <p>
+            To calculate the new model space normal vector, I first calculate the differential change of height with respect to the u and v texture coordinates:
+            $$ dU = (h(u + 1/w, v) - h(u, v)) * k_h * k_n $$
+            $$ dV = (h(u, v + 1/h) - h(u, v)) * k_h * k_n $$
+            With these values calculated, I compute the new local space normal vector as \( n_o = (-dU, -dV, 1)\) which can easily be converted to model space using the \( TBN \) transformation matrix.
+        </p>
+
+        <hr>
+
+        <p>
+            <kbd>Displacement.frag</kbd> follows the same implementation of <kbd>Bump.frag</kbd> but Displacement mapping also requires modifying the position of vertices to reflect the height map in addition to modifying the normals to be consistent with the new geometry.
+            To make this change, I modified <kbd>Displacement.vert</kbd> and updated the vertex positions based on this formula: \( p' = p + n * h(u, v) * k_h \). This formula describes updating the vertex positions in the direction of the original vertex normals scaled by <code>u_height_scaling</code>.
+        </p>
+
+
+
+        <p class="fs-6 fw-medium">
+            Show a screenshot of bump mapping on the cloth and on the sphere.
+            Show a screenshot of displacement mapping on the sphere.
+            Use the same texture for both renders.
+            You can either provide your own texture or use one of the ones in the textures directory,
+            BUT choose one that's not the default <code>texture_2.png</code>.
+            Compare the two approaches and resulting renders in your own words.
+            Compare how your the two shaders react to the sphere by changing the sphere mesh's coarseness by using <code>-o 16 -a 16</code> and then <code>-o 128 -a 128</code>.
+        </p>
+
+        <p>
+            Below are screenshots of <code>scene/sphere.json</code> with bump mapping and displacement mapping. To generate the images below, I set the <code>normal</code> parameter to 100 and <code>height</code> to 0.02.
+            These results use <code>texture3.png</code>.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_bump_cloth.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Bump Mapping on the Cloth </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_bump_sphere.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Bump Mapping on the Sphere </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_bump_cloth_on_sphere.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Bump Mapping for Cloth on Sphere </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_displacement_cloth.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Displacement Mapping on Cloth </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_displacement_sphere.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Displacement Mapping on the Sphere </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_displacement_cloth_on_sphere.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Displacement Mapping for Cloth on Sphere </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>
+            Comparing the results above, we see that displacement mapping doesn't preserve the smoothness of the sphere.
+            In fact, displacement mapping changes the location of the vertex positions which results in the sphere looking rough based on the pattern of the brick texture.
+            On the other hand, bump mapping preserves the shape and surface of the sphere by only modifying the normal vectors in the fragment shader implementation.
+            This gives the illusion of bumps and different lighting appearances on the surface of the sphere that are consistent with the brick texture of <code>texture3.png</code>
+        </p>
+
+        <p>
+            The photos below compare the difference between Bump and Displacement Mapping when changing the sphere mesh's coarseness:-o 16 -a 16 and then -o 128 -a 128.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_bump_16.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Bump Mapping : -o 16 -a 16 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_displacement_16.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Displacement Mapping : -o 16 -a 16 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_bump_128.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Bump Mapping : -o 128 -a 128 </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_displacement_128.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Displacement Mapping : -o 128 -a 128 </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>
+            The difference in the sphere mesh's coarseness is best observed through Displacement mapping rather than Bump mapping. Using a low resolution mesh (<code>-o 16 -a 16</code>) for the sphere means there are fewer points on the sphere mesh which is why the edges of the resulting "sphere" are noticeable, making it appear like a polygon with many edges.
+            Because of the limited resolution, displacement mapping makes the sphere look unnatural which undermines its desired effect.
+            However, using a higher resolution (<code>-o 128 -a 128</code>) means that the sphere contains enough points/vertices for Displacement mapping to be effective. With higher resolution, there are more vertices that are being displaced to fit the brick texture which ultimately makes the sphere's texture look more realistic.
+            Additionally, the roundness of the sphere is better preserved with a high resolution compared to a lower resolution.
+            <br> <br>
+            Chaning the resolution doesn't seem to have a significant effect on Bump mapping because bump mapping doesn't actually modify the position of vertices. Therefore, the surface/appearance of the sphere remains the same across these mesh resolutions.
+        </p>
+
+
+        <h5> Mirror Shading</h5>
+
+        <p>
+            Mirror shading works by enclosing the scene inside an infinitely-large room that contains the environments appearance on the inside walls.
+            With this construction, we are able to first use the camera's position <code>u_cam_position</code> and the fragment's position <code>v_position</code> to compute the outgoing eye ray \( w_o \) as <code>normalize(v_position.xyz - u_cam_pos)</code>.
+            Then, I called the GLSL <code>reflect()</code> function to reflect \( w_o \) across the surface normal (<code>v_normal</code>) to get \( w_i \) - the direction vector used to sample the incoming radiance from the environment map <code>u_texture_cubemap</code>.
+        </p>
+
+
+        <p class="fs-6 fw-medium">
+            Show a screenshot of your mirror shader on the cloth and on the sphere.
+        </p>
+
+        <div class="container grid-container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_mirror_plane.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Mirror Shader for the Cloth </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_mirror_sphere.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Mirror Shader for the Sphere </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                    <div class="card">
+                        <img src="images/part5_mirror_cloth.png" class="card-img-top" alt="Image 1">
+                        <div class="card-body text-center">
+                            <p class="card-text"> Mirror Shader for the Cloth on the Sphere </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+
+    </div>
+
+</div>
+
+</body>
 </html>
